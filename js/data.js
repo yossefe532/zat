@@ -2,115 +2,73 @@
 const DEFAULT_COURSES = [
   { 
     id: 1, 
-    nameAr: 'إنجليزي - A1', 
-    nameEn: 'English – A1', 
+    nameAr: 'كورس إنجليزي', 
+    nameEn: 'English Course', 
     icon: '🇬🇧', 
-    level: 'A1',
-    benefitAr: 'مبتدئ جداً - تعلّم أساسيات اللغة: كلمات، جمل، محادثات بسيطة',
-    benefitEn: 'Absolute beginner - Learn language basics: words, sentences, simple conversations',
-    originalPrice: 1500,
-    grantPrice: 350
+    level: 'A1-A2',
+    benefitAr: 'تطوير مهارات التحدث والكتابة بشكل احترافي',
+    benefitEn: 'Professional development of speaking and writing skills',
+    originalPrice: 3000,
+    grantPrice: 650
   },
   { 
     id: 2, 
-    nameAr: 'ألماني – A1.1', 
-    nameEn: 'German – A1.1', 
+    nameAr: 'كورس ألماني', 
+    nameEn: 'German Course', 
     icon: '🇩🇪', 
     level: 'A1.1',
-    benefitAr: 'مبتدئين من الصفر - تعلّم المفردات، المحادثات اليومية، والنطق الصحيح',
-    benefitEn: 'Beginners from scratch - Learn vocabulary, daily conversations, and correct pronunciation',
-    originalPrice: 1500,
-    grantPrice: 350
+    benefitAr: 'تعلم اللغة الألمانية من الصفر حتى المحادثة اليومية',
+    benefitEn: 'Learn German from scratch to daily conversation',
+    originalPrice: 3000,
+    grantPrice: 650
   },
   { 
     id: 3, 
-    nameAr: 'ICDL', 
-    nameEn: 'ICDL', 
+    nameAr: 'كورس ICDL', 
+    nameEn: 'ICDL Course', 
     icon: '💻', 
     level: 'شهادة دولية',
-    benefitAr: 'تعلّم مهارات الكمبيوتر الأساسية - Microsoft Office والبرامج الضرورية',
-    benefitEn: 'Learn essential computer skills - Microsoft Office and necessary programs',
-    originalPrice: 1500,
-    grantPrice: 350
+    benefitAr: 'إتقان مهارات الحاسب الآلي والبرامج المكتبية الأساسية',
+    benefitEn: 'Mastering computer skills and essential office programs',
+    originalPrice: 3000,
+    grantPrice: 650
   },
   { 
     id: 4, 
-    nameAr: 'Photoshop', 
-    nameEn: 'Photoshop', 
-    icon: '🎨', 
+    nameAr: 'موشن جرافيك', 
+    nameEn: 'Motion Graphics', 
+    icon: '🎬', 
     level: 'من الصفر',
-    benefitAr: 'تعديل الصور، الألوان، الطبقات، والإخراج النهائي الاحترافي',
-    benefitEn: 'Image editing, colors, layers, and professional final output',
-    originalPrice: 1500,
-    grantPrice: 350
+    benefitAr: 'تحريك الرسوم وتصميم الفيديو والمونتاج الاحترافي',
+    benefitEn: 'Animation, video design, and professional editing',
+    originalPrice: 3000,
+    grantPrice: 650
   },
   { 
     id: 5, 
-    nameAr: 'الذكاء الاصطناعي AI', 
-    nameEn: 'Artificial Intelligence AI', 
-    icon: '🤖', 
-    level: 'حديث',
-    benefitAr: 'تطبيقات AI في الأعمال، التسويق، الإبداع والتقنيات الحديثة',
-    benefitEn: 'AI applications in business, marketing, creativity and modern technology',
-    originalPrice: 1500,
-    grantPrice: 350
+    nameAr: 'جرافيك ديزاين', 
+    nameEn: 'Graphic Design', 
+    icon: '🎨', 
+    level: 'احترافي',
+    benefitAr: 'احتراف برامج التصميم العالمية وتصميم الهويات البصرية',
+    benefitEn: 'Mastering international design software and visual identity design',
+    originalPrice: 3000,
+    grantPrice: 650
   },
   { 
     id: 6, 
-    nameAr: 'أساسيات البرمجة + HTML و CSS', 
-    nameEn: 'Programming Basics + HTML & CSS', 
-    icon: '👨‍💻', 
-    level: 'من الصفر',
-    benefitAr: 'تصميم مواقع ويب من البداية حتى الاحتراف - كود نظيف وعملي',
-    benefitEn: 'Design websites from beginner to professional - clean and practical code',
-    originalPrice: 1500,
-    grantPrice: 350
-  },
-  { 
-    id: 7, 
-    nameAr: 'Premiere', 
-    nameEn: 'Premiere', 
-    icon: '🎬', 
-    level: 'من الصفر',
-    benefitAr: 'المونتاج الاحترافي - مؤثرات، صوت، عناوين، وتصدير عالي الجودة',
-    benefitEn: 'Professional editing - effects, audio, titles, and high-quality export',
-    originalPrice: 1500,
-    grantPrice: 350
-  },
-  { 
-    id: 8, 
-    nameAr: 'Motion Level 1', 
-    nameEn: 'Motion Level 1', 
-    icon: '🎞️', 
-    level: 'المستوى الأول',
-    benefitAr: 'أساسيات التحريك والموشن جرافيك - تحريك العناصر البسيطة',
-    benefitEn: 'Motion graphics basics - animating simple elements',
-    originalPrice: 1500,
-    grantPrice: 350
-  },
-  { 
-    id: 9, 
-    nameAr: 'Motion Level 2', 
-    nameEn: 'Motion Level 2', 
-    icon: '🎥', 
-    level: 'متقدم',
-    benefitAr: 'تحريك متقدم - الشخصيات، التفاصيل المعقدة، والتحريك الاحترافي',
-    benefitEn: 'Advanced animation - characters, complex details, professional animation',
-    originalPrice: 1500,
-    grantPrice: 350
-  },
-  { 
-    id: 10, 
-    nameAr: 'Canva + Whiteboard', 
-    nameEn: 'Canva + Whiteboard', 
-    icon: '📊', 
-    level: 'تدريس حديث',
-    benefitAr: 'نظام تدريس احترافي - عروض، فيديوهات، وشرائح تعليمية مميزة',
-    benefitEn: 'Professional teaching system - presentations, videos, and distinctive educational slides',
-    originalPrice: 1500,
-    grantPrice: 350
+    nameAr: 'برمجة HTML & CSS', 
+    nameEn: 'HTML & CSS Programming', 
+    icon: '🌐', 
+    level: 'تطوير ويب',
+    benefitAr: 'بناء وتطوير المواقع الإلكترونية من البداية بشكل عملي',
+    benefitEn: 'Practical building and development of websites from scratch',
+    originalPrice: 3000,
+    grantPrice: 650
   }
 ];
+
+const ADMIN_FEES = 25;
 
 const DEFAULT_CODES = {
   'Y.EDU': {

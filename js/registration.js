@@ -148,6 +148,7 @@ function renderCourses(lang) {
   const container = document.getElementById(`courses-grid-${lang}`);
   const courses = getCourses();
   container.innerHTML = '';
+  const adminFees = 25;
 
   courses.forEach(c => {
     const card = document.createElement('div');
@@ -161,7 +162,10 @@ function renderCourses(lang) {
       <div class="course-card-benefit">${lang === 'ar' ? c.benefitAr : c.benefitEn}</div>
       <div style="margin-top: 15px;">
         <div class="course-card-price">${c.originalPrice} ${lang === 'ar' ? 'جنيه' : 'EGP'}</div>
-        <div class="course-card-grant-price">${activatedGrant ? c.grantPrice : c.originalPrice} ${lang === 'ar' ? 'جنيه' : 'EGP'}</div>
+        <div class="course-card-grant-price">${activatedGrant ? c.grantPrice + adminFees : c.originalPrice} ${lang === 'ar' ? 'جنيه' : 'EGP'}</div>
+        <div style="font-size: 12px; color: var(--text-gray); margin-top: 4px;">
+          ${lang === 'ar' ? `(شاملة ${adminFees} ج رسوم إدارية)` : `(Includes ${adminFees} EGP admin fees)`}
+        </div>
       </div>
     `;
 
@@ -209,11 +213,12 @@ function updateSmartBasket() {
 
   let originalTotal = 0;
   let finalTotal = 0;
+  const adminFees = 25;
 
   selectedCourses.forEach(c => {
     const item = document.createElement('div');
     item.className = 'basket-item';
-    const price = activatedGrant ? c.grantPrice : c.originalPrice;
+    const price = (activatedGrant ? c.grantPrice : c.originalPrice) + adminFees;
     item.innerHTML = `
       <div class="basket-item-info">
         <span class="basket-item-name">${lang === 'ar' ? c.nameAr : c.nameEn}</span>
@@ -257,8 +262,8 @@ function updateSmartBasket() {
     if (discountRow) discountRow.style.display = 'none';
   }
 
-  // Installments: 200 per course (or final total if less)
-  const inst1 = Math.min(finalTotal, selectedCourses.length * 200);
+  // Installments: 1st installment is 200 per course + admin fees, or total if less
+  const inst1 = Math.min(finalTotal, selectedCourses.length * (200 + adminFees));
   const inst2 = Math.max(0, finalTotal - inst1);
 
   if (originalTotalEl) originalTotalEl.textContent = `${originalTotal} ${lang === 'ar' ? 'جنيه' : 'EGP'}`;
