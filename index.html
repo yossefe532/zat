@@ -806,6 +806,26 @@
 
     .section { padding: 80px 20px; }
     .section-title { text-align: center; font-size: 32px; margin-bottom: 40px; color: var(--primary-red); }
+
+    /* Admin Panel Styles */
+    #admin-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      z-index: 10000;
+      padding: 40px 20px;
+      overflow-y: auto;
+      display: none;
+    }
+    [data-theme="dark"] #admin-panel { background: #1a1a1a; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    .admin-table th, .admin-table td { padding: 12px; border: 1px solid var(--border-light); text-align: center; }
+    .admin-table th { background: var(--primary-red); color: white; }
+    .close-admin { padding: 10px 20px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -1052,6 +1072,32 @@
     </section>
   </div>
 
+  <!-- Admin Panel -->
+  <div id="admin-panel">
+    <div class="admin-header">
+      <h2>لوحة التحكم - التسجيلات</h2>
+      <button class="close-admin" id="close-admin-btn">إغلاق</button>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <button class="btn btn-primary" id="clear-data-btn">مسح كافة البيانات</button>
+      <button class="btn btn-primary" id="download-csv-btn">تحميل Excel (CSV)</button>
+    </div>
+    <div id="admin-table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>الاسم</th>
+            <th>الهاتف</th>
+            <th>الكود</th>
+            <th>الدورات</th>
+            <th>الإجمالي</th>
+          </tr>
+        </thead>
+        <tbody id="admin-registrations-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   <script>
     // Configuration & Data
     const ADMIN_FEES = 25;
@@ -1066,7 +1112,9 @@
 
     const DEFAULT_CODES = {
       'Y.EDU': { nameAr: 'منحة يوسف', nameEn: 'Yousef Grant', whatsappNumber: '201029398592' },
-      'S.EDU': { nameAr: 'منحة سما', nameEn: 'Sama Grant', whatsappNumber: '201020408172' }
+      'S.EDU': { nameAr: 'منحة سما', nameEn: 'Sama Grant', whatsappNumber: '201020408172' },
+      'H.E4U': { nameAr: 'منحة حبيبة', nameEn: 'Habiba Grant', whatsappNumber: '201034434253' },
+      'MH.E4U': { nameAr: 'منحة محمود', nameEn: 'Mahmoud Grant', whatsappNumber: '201022027996' }
     };
 
     // State
@@ -1142,6 +1190,66 @@
       document.addEventListener('click', (e) => {
         if (sidebar && !sidebar.contains(e.target) && !toggle.contains(e.target)) sidebar.classList.remove('open');
       });
+
+      // Admin Panel Trigger
+      const logos = document.querySelector('.logo-container');
+      if (logos) {
+        logos.onclick = (e) => {
+          if (e.ctrlKey && e.shiftKey) {
+            openAdmin();
+          }
+        };
+      }
+      document.getElementById('close-admin-btn').onclick = () => {
+        document.getElementById('admin-panel').style.display = 'none';
+      };
+      document.getElementById('clear-data-btn').onclick = () => {
+        if (confirm('هل أنت متأكد من مسح كافة بيانات التسجيل؟')) {
+          localStorage.removeItem('zat_registrations');
+          renderAdmin();
+        }
+      };
+      document.getElementById('download-csv-btn').onclick = () => {
+        const regs = JSON.parse(localStorage.getItem('zat_registrations') || '[]');
+        if (regs.length === 0) return alert('لا توجد بيانات لتحميلها');
+        let csv = '\uFEFFالاسم,الهاتف,كود التسجيل,الدورات,الإجمالي,التاريخ\n';
+        regs.forEach(r => {
+          csv += `"${r.fullName}","${r.phone}","${r.finalCode}","${r.courses}","${r.total} ج","${r.date}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `registrations_${new Date().toLocaleDateString()}.csv`;
+        link.click();
+      };
+    }
+
+    function openAdmin() {
+      document.getElementById('admin-panel').style.display = 'block';
+      renderAdmin();
+    }
+
+    function renderAdmin() {
+      const regs = JSON.parse(localStorage.getItem('zat_registrations') || '[]');
+      const body = document.getElementById('admin-registrations-body');
+      body.innerHTML = '';
+      regs.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.fullName}</td>
+          <td>${r.phone}</td>
+          <td>${r.finalCode}</td>
+          <td>${r.courses}</td>
+          <td>${r.total} ج</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function saveRegistration(data) {
+      const regs = JSON.parse(localStorage.getItem('zat_registrations') || '[]');
+      regs.push(data);
+      localStorage.setItem('zat_registrations', JSON.stringify(regs));
     }
 
     function initRegistration() {
@@ -1290,16 +1398,55 @@
       const name = document.getElementById(`full-name-${lang}`).value;
       const phone = document.getElementById(`phone-${lang}`).value;
       if (!name || !phone) { showMessage(document.getElementById(`form-error-${lang}`), 'برجاء إدخال البيانات'); return; }
+      
       const code = (activatedGrant ? activatedGrant.code[0] : 'Z') + '.' + Math.floor(100+Math.random()*900);
+      window.finalCode = code;
+
+      // Save to local storage for admin panel
+      saveRegistration({
+        fullName: name,
+        phone: phone,
+        finalCode: code,
+        courses: selectedCourses.map(c => c.nameAr).join(' + '),
+        total: lastBasketTotals.finalTotal,
+        date: new Date().toLocaleString('ar-EG')
+      });
+
       document.getElementById(`final-code-display-${lang}`).textContent = code;
       document.getElementById(`form-fields-container-${lang}`).style.display = 'none';
       document.getElementById(`code-display-container-${lang}`).style.display = 'block';
-      window.finalCode = code;
     }
 
     function sendWhatsApp(lang) {
       const target = activatedGrant ? activatedGrant.whatsappNumber : '201029398592';
-      const msg = `تأكيد حجز: ${window.finalCode}\nالاسم: ${document.getElementById('full-name-'+lang).value}\nالكورسات: ${selectedCourses.map(c=>c.nameAr).join(', ')}\nالإجمالي: ${lastBasketTotals.finalTotal} ج`;
+      const name = document.getElementById(`full-name-${lang}`).value;
+      const phone = document.getElementById(`phone-${lang}`).value;
+      const courses = selectedCourses.map(c => lang === 'ar' ? c.nameAr : c.nameEn).join(' + ');
+      
+      const msg = lang === 'ar' 
+        ? `*تأكيد حجز منحة ZAT* 🚀\n\n` +
+          `*الاسم:* ${name}\n` +
+          `*رقم الهاتف:* ${phone}\n` +
+          `*كود التسجيل:* ${window.finalCode}\n` +
+          `*الكود المستخدم:* ${activatedGrant ? activatedGrant.code : 'بدون كود'}\n\n` +
+          `*الدورات المختارة:*\n${courses}\n\n` +
+          `*التفاصيل المالية:*\n` +
+          `- الإجمالي النهائي: ${lastBasketTotals.finalTotal} جنيه\n` +
+          `- القسط الأول: ${lastBasketTotals.inst1} جنيه\n` +
+          `- المتبقي: ${lastBasketTotals.finalTotal - lastBasketTotals.inst1} جنيه\n\n` +
+          `⚠️ يرجى إرسال هذه الرسالة الآن لتأكيد مكانك في المنحة.`
+        : `*ZAT Grant Confirmation* 🚀\n\n` +
+          `*Name:* ${name}\n` +
+          `*Phone:* ${phone}\n` +
+          `*Registration Code:* ${window.finalCode}\n` +
+          `*Used Code:* ${activatedGrant ? activatedGrant.code : 'None'}\n\n` +
+          `*Selected Courses:*\n${courses}\n\n` +
+          `*Financial Details:*\n` +
+          `- Final Total: ${lastBasketTotals.finalTotal} EGP\n` +
+          `- 1st Installment: ${lastBasketTotals.inst1} EGP\n` +
+          `- Remaining: ${lastBasketTotals.finalTotal - lastBasketTotals.inst1} EGP\n\n` +
+          `⚠️ Please send this message now to confirm your spot.`;
+
       window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
