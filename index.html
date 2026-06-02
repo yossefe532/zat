@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZAT Initiative - منحة ZAT التعليمية</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Full Site Loader -->
+  <div id="site-loader">
+    <img src="https://i.postimg.cc/p9N0tpnj/image.png" alt="ZAT Logo" class="loader-logo">
+    <div class="loader-bar-container">
+      <div class="loader-bar"></div>
+    </div>
+    <p style="margin-top: 15px; font-weight: bold; color: var(--primary-red);">جاري تحميل المبادرة...</p>
+  </div>
+
+  <div class="top-bar">
+    <div class="logo-container">
+      <img src="https://i.postimg.cc/GhwMQFf9/educon_logo_high_quality.png" alt="Educon Academy" class="top-bar-logo" id="educon-logo-header">
+      <div class="logo-divider"></div>
+      <img src="https://i.postimg.cc/p9N0tpnj/image.png" alt="ZAT Initiative" class="top-bar-logo zat-logo" id="zat-logo-header">
+    </div>
+    <div class="share-icons">
+      <button class="share-icon facebook" id="share-facebook">f</button>
+      <button class="share-icon whatsapp" id="share-whatsapp">W</button>
+      <button class="share-icon twitter" id="share-twitter">X</button>
+      <button class="share-icon copy" id="share-copy">⛓</button>
+    </div>
+  </div>
+
+  <button class="sidebar-toggle" id="sidebar-toggle">
+    <span class="content-ar active">القائمة</span>
+    <span class="content-en">Menu</span>
+  </button>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="content-ar active"><h2 class="sidebar-title">القائمة الرئيسية</h2></div>
+      <div class="content-en"><h2 class="sidebar-title">Main Menu</h2></div>
+      <button class="sidebar-close" id="sidebar-close">×</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="content-ar active"><div class="sidebar-section-title">اللغة</div></div>
+      <div class="content-en"><div class="sidebar-section-title">Language</div></div>
+      <div class="lang-switch-group">
+        <button class="lang-btn active" data-lang="ar">عربي</button>
+        <button class="lang-btn" data-lang="en">English</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="content-ar active"><div class="sidebar-section-title">المظهر</div></div>
+      <div class="content-en"><div class="sidebar-section-title">Theme</div></div>
+      <button class="theme-btn" id="theme-toggle"><span id="theme-icon">🌙</span></button>
+    </div>
+  </nav>
+
+  <div class="page-wrapper h-full">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="loader-spinner"></div>
+      <div class="loading-text">
+        <span class="content-ar active">جاري تسجيل بياناتك...</span>
+        <span class="content-en">Registering your data...</span>
+      </div>
+    </div>
+
+    <!-- Floating Basket Toggle Button -->
+    <button id="basket-toggle-btn" class="basket-floating-btn" style="display: none;">
+      <span class="basket-icon">🛒</span>
+      <span id="basket-floating-count" class="basket-badge">0</span>
+    </button>
+
+    <!-- Smart Basket Drawer UI -->
+    <div id="basket-overlay" class="basket-overlay"></div>
+    <div id="smart-basket" class="smart-basket-drawer">
+      <div class="basket-content-wrapper">
+        <div class="basket-header">
+          <div class="basket-title">
+            <span>🛒</span>
+            <span class="content-ar active">سلة الدورات</span>
+            <span class="content-en">Course Basket</span>
+          </div>
+          <button id="close-basket" class="basket-close-btn">×</button>
+        </div>
+        
+        <div id="basket-items" class="basket-items-list">
+          <!-- Items injected here -->
+        </div>
+
+        <div class="basket-summary">
+          <div class="summary-row">
+            <span class="content-ar active">إجمالي السعر الأصلي:</span>
+            <span class="content-en">Original Total:</span>
+            <span id="basket-original-total">0</span>
+          </div>
+          <div id="basket-discount-row" class="summary-row" style="color: #00aa00; display: none;">
+            <span class="content-ar active">الخصم المطبق:</span>
+            <span class="content-en">Discount Applied:</span>
+            <span id="basket-discount-val">0</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span class="content-ar active">الإجمالي النهائي:</span>
+            <span class="content-en">Final Total:</span>
+            <span id="basket-final-total">0</span>
+          </div>
+
+          <div class="installment-details">
+            <div class="installment-box">
+              <span class="installment-label content-ar active">القسط الأول</span>
+              <span class="installment-label content-en">1st Installment</span>
+              <span id="basket-1st-inst" class="installment-value">0</span>
+            </div>
+            <div class="installment-box">
+              <span class="installment-label content-ar active">القسط الثاني</span>
+              <span class="installment-label content-en">2nd Installment</span>
+              <span id="basket-2nd-inst" class="installment-value">0</span>
+            </div>
+          </div>
+
+          <button id="basket-continue-to-reg" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+            <span class="content-ar active">متابعة للتسجيل ←</span>
+            <span class="content-en">Continue to Registration ←</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Welcome Section -->
+    <section class="hero active" id="welcome-hero-section">
+      <div class="content-ar active">
+        <h1 class="hero-title">أهلاً بك في مبادرة ZAT</h1>
+        <p class="hero-subtitle">اختر مهاراتك، فعّل كود المنحة، وابنِ مستقبلك المهني مع Educon Academy</p>
+        <button class="btn btn-primary" id="start-now-ar">🚀 ابدأ الآن</button>
+      </div>
+      <div class="content-en">
+        <h1 class="hero-title">Welcome to ZAT Initiative</h1>
+        <p class="hero-subtitle">Choose your skills, activate your grant code, and build your professional future with Educon Academy</p>
+        <button class="btn btn-primary" id="start-now-en">🚀 Start Now</button>
+      </div>
+    </section>
+
+    <!-- Code Gate Section -->
+    <section class="hero" id="code-gate-section" style="display: none;">
+      <div class="content-ar active">
+        <h1 class="hero-headline">أدخل كود المنحة الخاص بك</h1>
+        <div class="grant-box">
+          <label class="input-label" for="private-code-ar">🔒 كود ZAT السري</label>
+          <input type="text" id="private-code-ar" class="grant-input" placeholder="أدخل الكود هنا">
+          <div id="code-error-ar" class="error-message"></div>
+          <button class="btn btn-primary" id="activate-code-ar" style="width: 100%; margin-top: 20px;">تفعيل المنحة</button>
+          <button class="no-code-btn" id="no-code-btn-ar">ليس لدي كود منحة</button>
+        </div>
+      </div>
+      <div class="content-en">
+        <h1 class="hero-headline">Enter Your Grant Code</h1>
+        <div class="grant-box">
+          <label class="input-label" for="private-code-en">🔒 Private ZAT Code</label>
+          <input type="text" id="private-code-en" class="grant-input" placeholder="Enter code here">
+          <div id="code-error-en" class="error-message"></div>
+          <button class="btn btn-primary" id="activate-code-en" style="width: 100%; margin-top: 20px;">Activate Grant</button>
+          <button class="no-code-btn" id="no-code-btn-en">I don't have a code</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Course Selection Section -->
+    <section class="section" id="course-selection-section" style="display: none;">
+      <div class="content-ar active">
+        <div style="background: rgba(0,200,0,0.1); border: 2px solid #00aa00; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+          <h2 style="color: #00aa00;" id="grant-name-display-ar">تم تفعيل المنحة!</h2>
+        </div>
+        <h1 class="section-title">اختر دوراتك التعليمية</h1>
+        <div id="courses-grid-ar" class="course-selection-grid"></div>
+        <button class="continue-to-form-btn" id="continue-btn-ar" style="width: 100%; display: none;">متابعة للتسجيل ←</button>
+      </div>
+      <div class="content-en">
+        <div style="background: rgba(0,200,0,0.1); border: 2px solid #00aa00; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+          <h2 style="color: #00aa00;" id="grant-name-display-en">Grant Activated!</h2>
+        </div>
+        <h1 class="section-title">Choose Your Courses</h1>
+        <div id="courses-grid-en" class="course-selection-grid"></div>
+        <button class="continue-to-form-btn" id="continue-btn-en" style="width: 100%; display: none;">Continue to Registration ←</button>
+      </div>
+    </section>
+
+    <!-- Registration Form Section -->
+    <section class="section" id="registration-section" style="display: none;">
+      <div class="content-ar active">
+        <h2 class="section-title">استمارة التسجيل</h2>
+        <div class="grant-box">
+          <div id="form-fields-container-ar">
+            <label class="input-label">الاسم الكامل</label>
+            <input type="text" id="full-name-ar" class="grant-input" style="letter-spacing: normal;">
+            <label class="input-label">رقم الهاتف</label>
+            <input type="tel" id="phone-ar" class="grant-input" style="letter-spacing: 2px;">
+            
+            <label class="input-label">العمر</label>
+            <input type="number" id="age-ar" class="grant-input">
+            
+            <div id="cart-summary-final-ar" style="margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 10px;">
+              <div id="final-courses-ar"></div>
+              <div id="final-price-ar" style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;"></div>
+            </div>
+
+            <div id="form-error-ar" class="error-message"></div>
+            <button class="btn btn-primary" id="submit-registration-ar" style="width: 100%;">تأكيد التسجيل</button>
+          </div>
+
+          <!-- Code Display (Hidden initially) -->
+          <div id="code-display-container-ar" style="display: none; margin-bottom: 20px;">
+            <div class="final-code-box">
+              <label class="input-label" style="text-align: center;">كود التسجيل الخاص بك</label>
+              <span id="final-code-display-ar" class="final-code-value"></span>
+              <p style="font-size: 13px; color: #4caf50;">يرجى تصوير الشاشة أو نسخ الكود</p>
+            </div>
+            <div class="alert-whatsapp">
+              ⚠️ تنبيه هام: يجب عليك إرسال هذا الكود عبر واتساب لتأكيد حجزك وتفعيل المنحة.
+            </div>
+            <button class="whatsapp-btn" id="whatsapp-btn-ar">📱 إرسال للواتساب</button>
+            <div id="whatsapp-instructions-ar" style="text-align: center; margin-top: 10px; color: #666;">اضغط الزر أعلاه لفتح واتساب وإرسال بياناتك</div>
+          </div>
+        </div>
+      </div>
+      <div class="content-en">
+        <h2 class="section-title">Registration Form</h2>
+        <div class="grant-box">
+          <div id="form-fields-container-en">
+            <label class="input-label">Full Name</label>
+            <input type="text" id="full-name-en" class="grant-input" style="letter-spacing: normal;">
+            <label class="input-label">Phone Number</label>
+            <input type="tel" id="phone-en" class="grant-input" style="letter-spacing: 2px;">
+            
+            <label class="input-label">Age</label>
+            <input type="number" id="age-en" class="grant-input">
+            
+            <div id="cart-summary-final-en" style="margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 10px;">
+              <div id="final-courses-en"></div>
+              <div id="final-price-en" style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;"></div>
+            </div>
+
+            <div id="form-error-en" class="error-message"></div>
+            <button class="btn btn-primary" id="submit-registration-en" style="width: 100%;">Confirm Registration</button>
+          </div>
+
+          <!-- Code Display (Hidden initially) -->
+          <div id="code-display-container-en" style="display: none; margin-bottom: 20px;">
+            <div class="final-code-box">
+              <label class="input-label" style="text-align: center;">Your Registration Code</label>
+              <span id="final-code-display-en" class="final-code-value"></span>
+              <p style="font-size: 13px; color: #4caf50;">Please screenshot or copy this code</p>
+            </div>
+            <div class="alert-whatsapp">
+              ⚠️ Important: You must send this code via WhatsApp to confirm your booking and activate the grant.
+            </div>
+            <button class="whatsapp-btn" id="whatsapp-btn-en">📱 Send to WhatsApp</button>
+            <div id="whatsapp-instructions-en" style="text-align: center; margin-top: 10px; color: #666;">Click the button above to open WhatsApp</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
