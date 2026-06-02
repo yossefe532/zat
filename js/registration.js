@@ -19,6 +19,7 @@ export function initRegistration() {
       basket.classList.add('open');
       overlay.classList.add('show');
       document.body.classList.add('lock-scroll');
+      updateSmartBasket(); // Refresh content when opening
     }
   };
 
@@ -126,18 +127,19 @@ function validateCode(lang) {
 function showCourseSelection(lang) {
   document.getElementById('code-gate-section').style.display = 'none';
   document.getElementById('course-selection-section').style.display = 'block';
+  document.getElementById('course-selection-section').classList.add('show');
   
   const grantTitleAr = document.getElementById('grant-name-display-ar');
   const grantTitleEn = document.getElementById('grant-name-display-en');
   
   if (activatedGrant) {
-    grantTitleAr.parentElement.style.display = 'block';
-    grantTitleEn.parentElement.style.display = 'block';
-    grantTitleAr.textContent = activatedGrant.nameAr;
-    grantTitleEn.textContent = activatedGrant.nameEn;
+    if (grantTitleAr && grantTitleAr.parentElement) grantTitleAr.parentElement.style.display = 'block';
+    if (grantTitleEn && grantTitleEn.parentElement) grantTitleEn.parentElement.style.display = 'block';
+    if (grantTitleAr) grantTitleAr.textContent = activatedGrant.nameAr;
+    if (grantTitleEn) grantTitleEn.textContent = activatedGrant.nameEn;
   } else {
-    grantTitleAr.parentElement.style.display = 'none';
-    grantTitleEn.parentElement.style.display = 'none';
+    if (grantTitleAr && grantTitleAr.parentElement) grantTitleAr.parentElement.style.display = 'none';
+    if (grantTitleEn && grantTitleEn.parentElement) grantTitleEn.parentElement.style.display = 'none';
   }
 
   renderCourses(lang);
@@ -174,6 +176,11 @@ function renderCourses(lang) {
       if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
       card.classList.toggle('selected', checkbox.checked);
       updateSelection();
+      
+      // Auto open basket on first selection
+      if (selectedCourses.length === 1 && checkbox.checked) {
+        openBasket();
+      }
     };
     container.appendChild(card);
   });
