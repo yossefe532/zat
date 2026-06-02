@@ -5,7 +5,808 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZAT Initiative - منحة ZAT التعليمية</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root {
+      --primary-red: #DB0000;
+      --secondary-red: #FF1A1A;
+      --light-bg: #f7f7f7;
+      --white: #FFFFFF;
+      --text-dark: #111111;
+      --text-gray: #666666;
+      --border-light: #E8E8E8;
+      --card-bg: #FFFFFF;
+      --overlay-bg: rgba(255, 255, 255, 0.95);
+    }
+
+    [data-theme="dark"] {
+      --primary-red: #FF3333;
+      --secondary-red: #FF5555;
+      --light-bg: #0f0f0f;
+      --white: #f0f0f0;
+      --text-dark: #f0f0f0;
+      --text-gray: #cccccc;
+      --border-light: #333333;
+      --card-bg: #1a1a1a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--light-bg);
+      color: var(--text-dark);
+      overflow-x: hidden;
+      line-height: 1.8;
+      transition: background 0.6s ease, color 0.6s ease;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=90');
+      background-size: cover;
+      background-position: center;
+      z-index: -2;
+      opacity: 0.1;
+    }
+
+    [data-theme="dark"] body::before {
+      background-image: url('https://images.unsplash.com/photo-1511988617509-a57c8a288659?w=1920&q=90');
+    }
+
+    /* Top Bar */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 12px 30px;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+      z-index: 999;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(219, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] .top-bar {
+      background: rgba(26, 26, 26, 0.95);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .top-bar-logo {
+      height: 40px;
+      width: auto;
+      cursor: pointer;
+    }
+
+    .logo-divider {
+      width: 2px;
+      height: 30px;
+      background: var(--primary-red);
+      opacity: 0.3;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 280px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--primary-red), var(--secondary-red));
+      z-index: 1000;
+      transform: translateX(100%);
+      transition: transform 0.4s ease;
+      padding: 30px 20px;
+      color: white;
+    }
+
+    [dir="ltr"] .sidebar {
+      left: 0;
+      right: auto;
+      transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 999;
+      background: var(--primary-red);
+      color: white;
+      padding: 15px 10px;
+      border: none;
+      border-radius: 10px 0 0 10px;
+      cursor: pointer;
+      writing-mode: vertical-rl;
+    }
+
+    [dir="ltr"] .sidebar-toggle {
+      left: 0;
+      right: auto;
+      border-radius: 0 10px 10px 0;
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 20px;
+    }
+
+    .hero-title {
+      font-size: 42px;
+      font-weight: 900;
+      color: var(--primary-red);
+      margin-bottom: 20px;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      max-width: 600px;
+      margin-bottom: 30px;
+    }
+
+    /* Forms & Inputs */
+    .grant-box {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .grant-input {
+      width: 100%;
+      padding: 15px;
+      border-radius: 10px;
+      border: 2px solid var(--border-light);
+      font-size: 18px;
+      text-align: center;
+      margin-bottom: 15px;
+      background: var(--light-bg);
+      color: var(--text-dark);
+    }
+
+    .input-label {
+      display: block;
+      text-align: right;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    [dir="ltr"] .input-label {
+      text-align: left;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 15px 30px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn-primary {
+      background: var(--primary-red);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(219, 0, 0, 0.3);
+    }
+
+    .no-code-btn {
+      background: none;
+      border: none;
+      color: var(--text-gray);
+      margin-top: 15px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Course Grid */
+    .course-selection-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+      margin: 30px auto;
+    }
+
+    .course-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border-light);
+      border-radius: 15px;
+      padding: 20px;
+      cursor: pointer;
+      transition: 0.3s;
+      position: relative;
+    }
+
+    .course-card:hover {
+      border-color: var(--primary-red);
+      transform: translateY(-5px);
+    }
+
+    .course-card.selected {
+      background: rgba(219, 0, 0, 0.05);
+      border-color: var(--primary-red);
+    }
+
+    .course-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .course-card-icon {
+      font-size: 30px;
+    }
+
+    .course-card-title {
+      font-weight: 800;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .course-card-benefit {
+      font-size: 14px;
+      color: var(--text-gray);
+      min-height: 60px;
+    }
+
+    .course-card-price {
+      font-size: 14px;
+      text-decoration: line-through;
+      color: var(--text-gray);
+    }
+
+    .course-card-grant-price {
+      font-size: 20px;
+      font-weight: 900;
+      color: #00aa00;
+    }
+
+    /* Messages */
+    .error-message {
+      color: #ff0000;
+      background: rgba(255, 0, 0, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .whatsapp-btn {
+      background: #25D366;
+      color: white;
+      width: 100%;
+      padding: 15px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 800;
+      font-size: 18px;
+      margin-top: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    /* Site Loading Page (Full Page) */
+    #site-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    #site-loader.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    [data-theme="dark"] #site-loader {
+      background: #0f0f0f;
+    }
+
+    .loader-logo {
+      width: 120px;
+      height: auto;
+      margin-bottom: 30px;
+      animation: pulse 2s infinite;
+    }
+
+    .loader-bar-container {
+      width: 200px;
+      height: 4px;
+      background: #eee;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .loader-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--primary-red);
+      animation: load 2s ease-in-out forwards;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.8; }
+    }
+
+    @keyframes load {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+
+    /* Smooth Transitions for Elements */
+    .hero, .section, .grant-box, .course-card, .btn, .basket-floating-btn {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+
+    .hero.active, .section.active, .hero.show, .section.show, .grant-box.show, .course-card.show, .btn.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Fix for share icons colors and visibility */
+    .share-icons {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .share-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      border: none;
+      color: white !important;
+    }
+
+    .share-icon.facebook { background: #1877F2 !important; }
+    .share-icon.whatsapp { background: #25D366 !important; }
+    .share-icon.twitter { background: #000000 !important; }
+    .share-icon.copy { background: var(--primary-red) !important; }
+
+    /* Smart Basket Drawer UI */
+    .basket-floating-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      background: var(--primary-red);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 8px 30px rgba(219, 0, 0, 0.4);
+      cursor: pointer;
+      z-index: 997;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    [dir="ltr"] .basket-floating-btn {
+      right: auto;
+      left: 30px;
+    }
+
+    .basket-floating-btn:hover {
+      transform: scale(1.1) translateY(-5px);
+    }
+
+    .basket-icon {
+      font-size: 24px;
+    }
+
+    .basket-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: #FFD700;
+      color: #000;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 4px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      border: 2px solid var(--primary-red);
+    }
+
+    .basket-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .basket-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .smart-basket-drawer {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 400px;
+      max-width: 85%;
+      height: 100%;
+      background: var(--card-bg);
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.3);
+      z-index: 2001;
+      padding: 0;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    [dir="ltr"] .smart-basket-drawer {
+      right: auto;
+      left: -100%;
+    }
+
+    .smart-basket-drawer.open {
+      transform: translateX(0);
+      right: 0;
+    }
+
+    [dir="ltr"] .smart-basket-drawer.open {
+      left: 0;
+    }
+
+    .basket-content-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 25px 20px;
+    }
+
+    .basket-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-light);
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+
+    .basket-title {
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--primary-red);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .basket-close-btn {
+      background: var(--light-bg);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 22px;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .basket-close-btn:hover {
+      background: var(--primary-red);
+      color: white;
+    }
+
+    .basket-items-list {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 15px;
+      padding-right: 5px;
+    }
+
+    .basket-items-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .basket-items-list::-webkit-scrollbar-thumb {
+      background: var(--border-light);
+      border-radius: 10px;
+    }
+
+    .basket-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .basket-item-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .basket-item-name {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .basket-item-price {
+      font-size: 13px;
+      color: var(--primary-red);
+      font-weight: 800;
+    }
+
+    .basket-summary {
+      background: var(--light-bg);
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: auto;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .summary-total {
+      border-top: 1px solid var(--border-light);
+      padding-top: 10px;
+      margin-top: 10px;
+      font-weight: 900;
+      color: var(--primary-red);
+      font-size: 18px;
+    }
+
+    .installment-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .installment-box {
+      background: var(--card-bg);
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid var(--border-light);
+    }
+
+    .installment-label {
+      font-size: 11px;
+      color: var(--text-gray);
+      margin-bottom: 3px;
+      display: block;
+    }
+
+    .installment-value {
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--primary-red);
+    }
+
+    /* MOBILE FIRST REDESIGN & FIXES */
+    @media (max-width: 768px) {
+      .top-bar {
+        padding: 10px 15px;
+      }
+      .top-bar-logo {
+        height: 32px;
+      }
+      .hero-title {
+        font-size: 28px;
+        line-height: 1.2;
+      }
+      .hero-subtitle {
+        font-size: 15px;
+        padding: 0 10px;
+      }
+      .grant-box {
+        padding: 20px;
+        margin: 0 15px;
+        width: calc(100% - 30px);
+      }
+      .course-selection-grid {
+        grid-template-columns: 1fr;
+        padding: 0 15px;
+        gap: 15px;
+      }
+      .course-card {
+        padding: 15px;
+      }
+      .smart-basket-drawer {
+        width: 100%;
+        max-width: 100%;
+      }
+      .basket-floating-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+      }
+      .section {
+        padding: 40px 10px;
+      }
+      .section-title {
+        font-size: 24px;
+        margin-bottom: 25px;
+      }
+    }
+
+    body.lock-scroll {
+      overflow: hidden !important;
+      height: 100vh !important;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--overlay-bg);
+      backdrop-filter: blur(8px);
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .loading-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .loader-spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid var(--border-light);
+      border-top: 5px solid var(--primary-red);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    .loading-text {
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--primary-red);
+      text-align: center;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .final-code-box {
+      background: #e8f5e9;
+      border: 2px dashed #2e7d32;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .final-code-value {
+      font-size: 32px;
+      font-weight: 900;
+      color: #1b5e20;
+      display: block;
+      margin: 10px 0;
+    }
+
+    .alert-whatsapp {
+      background: #fff3e0;
+      border-right: 4px solid #ef6c00;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 14px;
+      color: #e65100;
+      font-weight: 700;
+    }
+
+    [dir="ltr"] .alert-whatsapp {
+      border-right: none;
+      border-left: 4px solid #ef6c00;
+    }
+
+    .content-ar, .content-en { display: none !important; }
+    .content-ar.active, .content-en.active { display: block !important; }
+    [dir="ltr"] .content-ar { display: none !important; }
+    [dir="rtl"] .content-en { display: none !important; }
+
+    .section { padding: 80px 20px; }
+    .section-title { text-align: center; font-size: 32px; margin-bottom: 40px; color: var(--primary-red); }
+  </style>
 </head>
 <body>
   <!-- Full Site Loader -->
@@ -19,9 +820,9 @@
 
   <div class="top-bar">
     <div class="logo-container">
-      <img src="https://i.postimg.cc/GhwMQFf9/educon_logo_high_quality.png" alt="Educon Academy" class="top-bar-logo" id="educon-logo-header">
+      <img src="https://i.postimg.cc/GhwMQFf9/educon_logo_high_quality.png" alt="Educon Academy" class="top-bar-logo">
       <div class="logo-divider"></div>
-      <img src="https://i.postimg.cc/p9N0tpnj/image.png" alt="ZAT Initiative" class="top-bar-logo zat-logo" id="zat-logo-header">
+      <img src="https://i.postimg.cc/p9N0tpnj/image.png" alt="ZAT Initiative" class="top-bar-logo zat-logo">
     </div>
     <div class="share-icons">
       <button class="share-icon facebook" id="share-facebook">f</button>
@@ -88,9 +889,7 @@
           <button id="close-basket" class="basket-close-btn">×</button>
         </div>
         
-        <div id="basket-items" class="basket-items-list">
-          <!-- Items injected here -->
-        </div>
+        <div id="basket-items" class="basket-items-list"></div>
 
         <div class="basket-summary">
           <div class="summary-row">
@@ -171,20 +970,20 @@
     <!-- Course Selection Section -->
     <section class="section" id="course-selection-section" style="display: none;">
       <div class="content-ar active">
-        <div style="background: rgba(0,200,0,0.1); border: 2px solid #00aa00; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+        <div style="background: rgba(0,200,0,0.1); border: 2px solid #00aa00; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none;" id="grant-container-ar">
           <h2 style="color: #00aa00;" id="grant-name-display-ar">تم تفعيل المنحة!</h2>
         </div>
         <h1 class="section-title">اختر دوراتك التعليمية</h1>
         <div id="courses-grid-ar" class="course-selection-grid"></div>
-        <button class="continue-to-form-btn" id="continue-btn-ar" style="width: 100%; display: none;">متابعة للتسجيل ←</button>
+        <button class="btn btn-primary" id="continue-btn-ar" style="width: 100%; display: none; margin-top: 30px;">متابعة للتسجيل ←</button>
       </div>
       <div class="content-en">
-        <div style="background: rgba(0,200,0,0.1); border: 2px solid #00aa00; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+        <div style="background: rgba(0,200,0,0.1); border: 2px solid #00aa00; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none;" id="grant-container-en">
           <h2 style="color: #00aa00;" id="grant-name-display-en">Grant Activated!</h2>
         </div>
         <h1 class="section-title">Choose Your Courses</h1>
         <div id="courses-grid-en" class="course-selection-grid"></div>
-        <button class="continue-to-form-btn" id="continue-btn-en" style="width: 100%; display: none;">Continue to Registration ←</button>
+        <button class="btn btn-primary" id="continue-btn-en" style="width: 100%; display: none; margin-top: 30px;">Continue to Registration ←</button>
       </div>
     </section>
 
@@ -192,13 +991,12 @@
     <section class="section" id="registration-section" style="display: none;">
       <div class="content-ar active">
         <h2 class="section-title">استمارة التسجيل</h2>
-        <div class="grant-box">
+        <div class="grant-box" style="margin: 0 auto;">
           <div id="form-fields-container-ar">
             <label class="input-label">الاسم الكامل</label>
-            <input type="text" id="full-name-ar" class="grant-input" style="letter-spacing: normal;">
+            <input type="text" id="full-name-ar" class="grant-input">
             <label class="input-label">رقم الهاتف</label>
-            <input type="tel" id="phone-ar" class="grant-input" style="letter-spacing: 2px;">
-            
+            <input type="tel" id="phone-ar" class="grant-input">
             <label class="input-label">العمر</label>
             <input type="number" id="age-ar" class="grant-input">
             
@@ -211,30 +1009,24 @@
             <button class="btn btn-primary" id="submit-registration-ar" style="width: 100%;">تأكيد التسجيل</button>
           </div>
 
-          <!-- Code Display (Hidden initially) -->
-          <div id="code-display-container-ar" style="display: none; margin-bottom: 20px;">
+          <div id="code-display-container-ar" style="display: none;">
             <div class="final-code-box">
               <label class="input-label" style="text-align: center;">كود التسجيل الخاص بك</label>
               <span id="final-code-display-ar" class="final-code-value"></span>
-              <p style="font-size: 13px; color: #4caf50;">يرجى تصوير الشاشة أو نسخ الكود</p>
             </div>
-            <div class="alert-whatsapp">
-              ⚠️ تنبيه هام: يجب عليك إرسال هذا الكود عبر واتساب لتأكيد حجزك وتفعيل المنحة.
-            </div>
+            <div class="alert-whatsapp">⚠️ يجب إرسال هذا الكود عبر واتساب لتأكيد الحجز.</div>
             <button class="whatsapp-btn" id="whatsapp-btn-ar">📱 إرسال للواتساب</button>
-            <div id="whatsapp-instructions-ar" style="text-align: center; margin-top: 10px; color: #666;">اضغط الزر أعلاه لفتح واتساب وإرسال بياناتك</div>
           </div>
         </div>
       </div>
       <div class="content-en">
         <h2 class="section-title">Registration Form</h2>
-        <div class="grant-box">
+        <div class="grant-box" style="margin: 0 auto;">
           <div id="form-fields-container-en">
             <label class="input-label">Full Name</label>
-            <input type="text" id="full-name-en" class="grant-input" style="letter-spacing: normal;">
+            <input type="text" id="full-name-en" class="grant-input">
             <label class="input-label">Phone Number</label>
-            <input type="tel" id="phone-en" class="grant-input" style="letter-spacing: 2px;">
-            
+            <input type="tel" id="phone-en" class="grant-input">
             <label class="input-label">Age</label>
             <input type="number" id="age-en" class="grant-input">
             
@@ -247,24 +1039,278 @@
             <button class="btn btn-primary" id="submit-registration-en" style="width: 100%;">Confirm Registration</button>
           </div>
 
-          <!-- Code Display (Hidden initially) -->
-          <div id="code-display-container-en" style="display: none; margin-bottom: 20px;">
+          <div id="code-display-container-en" style="display: none;">
             <div class="final-code-box">
               <label class="input-label" style="text-align: center;">Your Registration Code</label>
               <span id="final-code-display-en" class="final-code-value"></span>
-              <p style="font-size: 13px; color: #4caf50;">Please screenshot or copy this code</p>
             </div>
-            <div class="alert-whatsapp">
-              ⚠️ Important: You must send this code via WhatsApp to confirm your booking and activate the grant.
-            </div>
+            <div class="alert-whatsapp">⚠️ You must send this code via WhatsApp to confirm booking.</div>
             <button class="whatsapp-btn" id="whatsapp-btn-en">📱 Send to WhatsApp</button>
-            <div id="whatsapp-instructions-en" style="text-align: center; margin-top: 10px; color: #666;">Click the button above to open WhatsApp</div>
           </div>
         </div>
       </div>
     </section>
   </div>
 
-  <script type="module" src="js/main.js"></script>
+  <script>
+    // Configuration & Data
+    const ADMIN_FEES = 25;
+    const DEFAULT_COURSES = [
+      { id: 1, nameAr: 'كورس إنجليزي', nameEn: 'English Course', icon: '🇬🇧', originalPrice: 3000, grantPrice: 650, benefitAr: 'تطوير مهارات التحدث والكتابة بشكل احترافي', benefitEn: 'Professional development of speaking and writing skills' },
+      { id: 2, nameAr: 'كورس ألماني', nameEn: 'German Course', icon: '🇩🇪', originalPrice: 3000, grantPrice: 650, benefitAr: 'تعلم اللغة الألمانية من الصفر حتى المحادثة اليومية', benefitEn: 'Learn German from scratch to daily conversation' },
+      { id: 3, nameAr: 'كورس ICDL', nameEn: 'ICDL Course', icon: '💻', originalPrice: 3000, grantPrice: 650, benefitAr: 'إتقان مهارات الحاسب الآلي والبرامج المكتبية الأساسية', benefitEn: 'Mastering computer skills and essential office programs' },
+      { id: 4, nameAr: 'موشن جرافيك', nameEn: 'Motion Graphics', icon: '🎬', originalPrice: 3000, grantPrice: 650, benefitAr: 'تحريك الرسوم وتصميم الفيديو والمونتاج الاحترافي', benefitEn: 'Animation, video design, and professional editing' },
+      { id: 5, nameAr: 'جرافيك ديزاين', nameEn: 'Graphic Design', icon: '🎨', originalPrice: 3000, grantPrice: 650, benefitAr: 'احتراف برامج التصميم العالمية وتصميم الهويات البصرية', benefitEn: 'Mastering international design software and visual identity design' },
+      { id: 6, nameAr: 'برمجة HTML & CSS', nameEn: 'HTML & CSS Programming', icon: '🌐', originalPrice: 3000, grantPrice: 650, benefitAr: 'بناء وتطوير المواقع الإلكترونية من البداية بشكل عملي', benefitEn: 'Practical building and development of websites from scratch' }
+    ];
+
+    const DEFAULT_CODES = {
+      'Y.EDU': { nameAr: 'منحة يوسف', nameEn: 'Yousef Grant', whatsappNumber: '201029398592' },
+      'S.EDU': { nameAr: 'منحة سما', nameEn: 'Sama Grant', whatsappNumber: '201020408172' }
+    };
+
+    // State
+    let currentLang = 'ar';
+    let currentTheme = 'light';
+    let activatedGrant = null;
+    let selectedCourses = [];
+    let lastBasketTotals = { originalTotal: 0, finalTotal: 0, inst1: 0, inst2: 0, multiDiscount: 0 };
+
+    // Core Functions
+    function init() {
+      initTheme();
+      initLang();
+      initUI();
+      initRegistration();
+      initShare();
+      
+      window.addEventListener('load', () => {
+        const loader = document.getElementById('site-loader');
+        if (loader) {
+          setTimeout(() => {
+            loader.classList.add('hide');
+            document.getElementById('welcome-hero-section').classList.add('show');
+          }, 500);
+        }
+      });
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('show'); });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.hero, .section, .grant-box, .course-card, .btn').forEach(el => observer.observe(el));
+    }
+
+    function initTheme() {
+      const btn = document.getElementById('theme-toggle');
+      const icon = document.getElementById('theme-icon');
+      const saved = localStorage.getItem('theme') || 'light';
+      const apply = (theme) => {
+        currentTheme = theme;
+        if (theme === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); if (icon) icon.textContent = '☀️'; }
+        else { document.documentElement.removeAttribute('data-theme'); if (icon) icon.textContent = '🌙'; }
+      };
+      apply(saved);
+      if (btn) btn.onclick = () => { const next = currentTheme === 'light' ? 'dark' : 'light'; apply(next); localStorage.setItem('theme', next); };
+    }
+
+    function initLang() {
+      const btns = document.querySelectorAll('.lang-btn');
+      const saved = localStorage.getItem('lang') || 'ar';
+      const apply = (lang) => {
+        currentLang = lang;
+        document.documentElement.setAttribute('lang', lang);
+        document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        document.body.style.direction = lang === 'ar' ? 'rtl' : 'ltr';
+        document.querySelectorAll('.content-ar, .content-en').forEach(el => {
+          el.classList.remove('active');
+          if (el.classList.contains('content-' + lang)) el.classList.add('active');
+        });
+        btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-lang') === lang));
+        localStorage.setItem('lang', lang);
+      };
+      apply(saved);
+      btns.forEach(btn => btn.onclick = () => apply(btn.getAttribute('data-lang')));
+    }
+
+    function initUI() {
+      const sidebar = document.getElementById('sidebar');
+      const toggle = document.getElementById('sidebar-toggle');
+      const close = document.getElementById('sidebar-close');
+      if (toggle) toggle.onclick = () => sidebar.classList.add('open');
+      if (close) close.onclick = () => sidebar.classList.remove('open');
+      document.addEventListener('click', (e) => {
+        if (sidebar && !sidebar.contains(e.target) && !toggle.contains(e.target)) sidebar.classList.remove('open');
+      });
+    }
+
+    function initRegistration() {
+      const basket = document.getElementById('smart-basket');
+      const overlay = document.getElementById('basket-overlay');
+      const toggleBtn = document.getElementById('basket-toggle-btn');
+      const closeBtn = document.getElementById('close-basket');
+      const continueToRegBtn = document.getElementById('basket-continue-to-reg');
+
+      const openBasket = () => { basket.classList.add('open'); overlay.classList.add('show'); document.body.classList.add('lock-scroll'); updateSmartBasket(); };
+      const closeBasket = () => { basket.classList.remove('open'); overlay.classList.remove('show'); document.body.classList.remove('lock-scroll'); };
+
+      if (toggleBtn) toggleBtn.onclick = (e) => { e.stopPropagation(); openBasket(); };
+      if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); closeBasket(); };
+      if (overlay) overlay.onclick = closeBasket;
+      if (continueToRegBtn) continueToRegBtn.onclick = () => { closeBasket(); showRegistrationForm(); };
+
+      document.getElementById('start-now-ar').onclick = showCodeGate;
+      document.getElementById('start-now-en').onclick = showCodeGate;
+      document.getElementById('activate-code-ar').onclick = () => validateCode('ar');
+      document.getElementById('activate-code-en').onclick = () => validateCode('en');
+      document.getElementById('no-code-btn-ar').onclick = () => { activatedGrant = null; showCourseSelection(); };
+      document.getElementById('no-code-btn-en').onclick = () => { activatedGrant = null; showCourseSelection(); };
+      document.getElementById('submit-registration-ar').onclick = () => submitForm('ar');
+      document.getElementById('submit-registration-en').onclick = () => submitForm('en');
+      document.getElementById('whatsapp-btn-ar').onclick = () => sendWhatsApp('ar');
+      document.getElementById('whatsapp-btn-en').onclick = () => sendWhatsApp('en');
+
+      // Global reference for basket opening
+      window.openBasket = openBasket;
+    }
+
+    function showCodeGate() {
+      document.getElementById('welcome-hero-section').style.display = 'none';
+      document.getElementById('code-gate-section').style.display = 'flex';
+      document.getElementById('code-gate-section').classList.add('show');
+      window.scrollTo(0, 0);
+    }
+
+    function validateCode(lang) {
+      const input = document.getElementById(`private-code-${lang}`);
+      const error = document.getElementById(`code-error-${lang}`);
+      const code = input.value.trim().toUpperCase();
+      if (!code) { showMessage(error, lang === 'ar' ? 'يرجى إدخال الكود' : 'Please enter code'); return; }
+      if (DEFAULT_CODES[code]) { activatedGrant = { ...DEFAULT_CODES[code], code }; showCourseSelection(); }
+      else { showMessage(error, lang === 'ar' ? 'الكود غير صحيح' : 'Invalid code'); }
+    }
+
+    function showCourseSelection() {
+      document.getElementById('code-gate-section').style.display = 'none';
+      document.getElementById('course-selection-section').style.display = 'block';
+      document.getElementById('course-selection-section').classList.add('show');
+      
+      const containerAr = document.getElementById('grant-container-ar');
+      const containerEn = document.getElementById('grant-container-en');
+      if (activatedGrant) {
+        containerAr.style.display = 'block'; containerEn.style.display = 'block';
+        document.getElementById('grant-name-display-ar').textContent = activatedGrant.nameAr;
+        document.getElementById('grant-name-display-en').textContent = activatedGrant.nameEn;
+      } else {
+        containerAr.style.display = 'none'; containerEn.style.display = 'none';
+      }
+      renderCourses();
+      window.scrollTo(0, 0);
+    }
+
+    function renderCourses() {
+      ['ar', 'en'].forEach(lang => {
+        const container = document.getElementById(`courses-grid-${lang}`);
+        container.innerHTML = '';
+        DEFAULT_COURSES.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'course-card show';
+          card.innerHTML = `
+            <div class="course-card-header">
+              <span class="course-card-icon">${c.icon}</span>
+              <input type="checkbox" class="course-card-checkbox" data-id="${c.id}">
+            </div>
+            <div class="course-card-title">${lang === 'ar' ? c.nameAr : c.nameEn}</div>
+            <div class="course-card-benefit">${lang === 'ar' ? c.benefitAr : c.benefitEn}</div>
+            <div style="margin-top: 15px;">
+              <div class="course-card-price">${c.originalPrice} ${lang === 'ar' ? 'ج' : 'EGP'}</div>
+              <div class="course-card-grant-price">${(activatedGrant ? c.grantPrice : c.originalPrice) + ADMIN_FEES} ${lang === 'ar' ? 'ج' : 'EGP'}</div>
+              <div style="font-size: 11px; color: var(--text-gray);">(شاملة ${ADMIN_FEES} ج رسوم)</div>
+            </div>
+          `;
+          const cb = card.querySelector('.course-card-checkbox');
+          card.onclick = () => {
+            cb.checked = !cb.checked;
+            card.classList.toggle('selected', cb.checked);
+            updateSelection();
+            if (selectedCourses.length === 1 && cb.checked) window.openBasket();
+          };
+          container.appendChild(card);
+        });
+      });
+    }
+
+    function updateSelection() {
+      const checkboxes = document.querySelectorAll('.course-card-checkbox:checked');
+      selectedCourses = Array.from(checkboxes).map(cb => DEFAULT_COURSES.find(c => c.id == cb.dataset.id));
+      const showBtn = selectedCourses.length > 0;
+      document.getElementById('continue-btn-ar').style.display = showBtn ? 'block' : 'none';
+      document.getElementById('continue-btn-en').style.display = showBtn ? 'block' : 'none';
+      document.getElementById('basket-toggle-btn').style.display = showBtn ? 'flex' : 'none';
+      document.getElementById('continue-btn-ar').onclick = showRegistrationForm;
+      document.getElementById('continue-btn-en').onclick = showRegistrationForm;
+      updateSmartBasket();
+    }
+
+    function updateSmartBasket() {
+      const lang = currentLang;
+      const list = document.getElementById('basket-items');
+      list.innerHTML = '';
+      let total = 0, original = 0;
+      selectedCourses.forEach(c => {
+        const price = (activatedGrant ? c.grantPrice : c.originalPrice) + ADMIN_FEES;
+        total += price; original += c.originalPrice;
+        const item = document.createElement('div');
+        item.className = 'basket-item';
+        item.innerHTML = `<div class="basket-item-info"><b>${lang === 'ar' ? c.nameAr : c.nameEn}</b><span>${price} ج</span></div>`;
+        list.appendChild(item);
+      });
+      let discount = selectedCourses.length >= 5 ? 100 : (selectedCourses.length >= 3 ? 50 : 0);
+      let final = total - discount;
+      let inst1 = Math.min(final, selectedCourses.length * (200 + ADMIN_FEES));
+      document.getElementById('basket-floating-count').textContent = selectedCourses.length;
+      document.getElementById('basket-original-total').textContent = original + ' ج';
+      document.getElementById('basket-final-total').textContent = final + ' ج';
+      document.getElementById('basket-1st-inst').textContent = inst1 + ' ج';
+      document.getElementById('basket-2nd-inst').textContent = (final - inst1) + ' ج';
+      lastBasketTotals = { finalTotal: final, inst1, inst2: final - inst1 };
+    }
+
+    function showRegistrationForm() {
+      document.getElementById('course-selection-section').style.display = 'none';
+      document.getElementById('registration-section').style.display = 'block';
+      document.getElementById('registration-section').classList.add('show');
+      const lang = currentLang;
+      document.getElementById(`final-courses-${lang}`).textContent = selectedCourses.map(c => lang === 'ar' ? c.nameAr : c.nameEn).join(' + ');
+      document.getElementById(`final-price-${lang}`).innerHTML = `<b>الإجمالي: ${lastBasketTotals.finalTotal} ج</b> (قسط 1: ${lastBasketTotals.inst1} ج)`;
+      window.scrollTo(0, 0);
+    }
+
+    function submitForm(lang) {
+      const name = document.getElementById(`full-name-${lang}`).value;
+      const phone = document.getElementById(`phone-${lang}`).value;
+      if (!name || !phone) { showMessage(document.getElementById(`form-error-${lang}`), 'برجاء إدخال البيانات'); return; }
+      const code = (activatedGrant ? activatedGrant.code[0] : 'Z') + '.' + Math.floor(100+Math.random()*900);
+      document.getElementById(`final-code-display-${lang}`).textContent = code;
+      document.getElementById(`form-fields-container-${lang}`).style.display = 'none';
+      document.getElementById(`code-display-container-${lang}`).style.display = 'block';
+      window.finalCode = code;
+    }
+
+    function sendWhatsApp(lang) {
+      const target = activatedGrant ? activatedGrant.whatsappNumber : '201029398592';
+      const msg = `تأكيد حجز: ${window.finalCode}\nالاسم: ${document.getElementById('full-name-'+lang).value}\nالكورسات: ${selectedCourses.map(c=>c.nameAr).join(', ')}\nالإجمالي: ${lastBasketTotals.finalTotal} ج`;
+      window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function showMessage(el, msg) { el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3000); }
+    function initShare() {
+      const url = encodeURIComponent(window.location.href);
+      document.getElementById('share-facebook').onclick = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`);
+      document.getElementById('share-whatsapp').onclick = () => window.open(`https://wa.me/?text=ZAT%20${url}`);
+    }
+
+    init();
+  </script>
 </body>
 </html>
