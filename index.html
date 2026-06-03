@@ -1072,22 +1072,54 @@
       <h2>لوحة التحكم - التسجيلات</h2>
       <button class="close-admin" id="close-admin-btn">إغلاق</button>
     </div>
-    <div style="margin-bottom: 20px;">
-      <button class="btn btn-primary" id="clear-data-btn">مسح كافة البيانات</button>
-      <button class="btn btn-primary" id="download-csv-btn">تحميل Excel (CSV)</button>
+    
+    <!-- Admin Tabs -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <button class="btn btn-primary" onclick="switchAdminTab('regs')">📋 التسجيلات</button>
+      <button class="btn btn-primary" onclick="switchAdminTab('codes')">🔑 إدارة الأكواد</button>
     </div>
-    <div id="admin-table-container">
+
+    <div id="admin-tab-regs">
+      <div style="margin-bottom: 20px;">
+        <button class="btn btn-primary" id="clear-data-btn">مسح كافة البيانات</button>
+        <button class="btn btn-primary" id="download-csv-btn">تحميل Excel (CSV)</button>
+      </div>
+      <div id="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>الاسم</th>
+              <th>الهاتف</th>
+              <th>الكود</th>
+              <th>الدورات</th>
+              <th>الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody id="admin-registrations-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="admin-tab-codes" style="display: none;">
+      <div class="grant-box" style="max-width: 600px; margin-bottom: 30px;">
+        <h3 style="margin-bottom: 15px;">إضافة كود جديد</h3>
+        <input type="text" id="new-code-key" class="grant-input" placeholder="الكود (مثلاً: NEW.E4U)">
+        <input type="text" id="new-code-name" class="grant-input" placeholder="اسم المنحة (مثلاً: منحة محمد)">
+        <input type="text" id="new-code-whatsapp" class="grant-input" placeholder="رقم الواتساب (مثلاً: 201029398592)">
+        <button class="btn btn-primary" id="add-custom-code-btn" style="width: 100%;">حفظ الكود</button>
+      </div>
+      
+      <h3>الأكواد المضافة يدوياً</h3>
       <table class="admin-table">
         <thead>
           <tr>
-            <th>الاسم</th>
-            <th>الهاتف</th>
             <th>الكود</th>
-            <th>الدورات</th>
-            <th>الإجمالي</th>
+            <th>الاسم</th>
+            <th>الواتساب</th>
+            <th>إجراء</th>
           </tr>
         </thead>
-        <tbody id="admin-registrations-body"></tbody>
+        <tbody id="admin-codes-body"></tbody>
       </table>
     </div>
   </div>
@@ -1111,6 +1143,11 @@
       'MH.E4U': { nameAr: 'منحة محمود', nameEn: 'Mahmoud Grant', whatsappNumber: '201022027996' },
       'MT.E4U': { nameAr: 'منحة محمد ممدوح', nameEn: 'Mohamed Mamdouh Grant', whatsappNumber: '201147691853' }
     };
+
+    function getActiveCodes() {
+      const customCodes = JSON.parse(localStorage.getItem('zat_custom_codes') || '{}');
+      return { ...DEFAULT_CODES, ...customCodes };
+    }
 
     // State
     let currentLang = 'ar';
@@ -1222,7 +1259,57 @@
     function openAdmin() {
       document.getElementById('admin-panel').style.display = 'block';
       renderAdmin();
+      renderAdminCodes();
     }
+
+    function switchAdminTab(tab) {
+      document.getElementById('admin-tab-regs').style.display = tab === 'regs' ? 'block' : 'none';
+      document.getElementById('admin-tab-codes').style.display = tab === 'codes' ? 'block' : 'none';
+    }
+
+    function renderAdminCodes() {
+      const customCodes = JSON.parse(localStorage.getItem('zat_custom_codes') || '{}');
+      const body = document.getElementById('admin-codes-body');
+      body.innerHTML = '';
+      Object.keys(customCodes).forEach(key => {
+        const c = customCodes[key];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${key}</td>
+          <td>${c.nameAr}</td>
+          <td>${c.whatsappNumber}</td>
+          <td><button class="btn btn-primary" onclick="deleteAdminCode('${key}')" style="background:#333; padding:5px 10px;">حذف</button></td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function deleteAdminCode(key) {
+      if (confirm(`هل أنت متأكد من حذف الكود ${key}؟`)) {
+        const customCodes = JSON.parse(localStorage.getItem('zat_custom_codes') || '{}');
+        delete customCodes[key];
+        localStorage.setItem('zat_custom_codes', JSON.stringify(customCodes));
+        renderAdminCodes();
+      }
+    }
+
+    document.getElementById('add-custom-code-btn').onclick = () => {
+      const key = document.getElementById('new-code-key').value.trim().toUpperCase();
+      const name = document.getElementById('new-code-name').value.trim();
+      const whatsapp = document.getElementById('new-code-whatsapp').value.trim();
+      
+      if (!key || !name || !whatsapp) return alert('يرجى إكمال جميع الحقول');
+      
+      const customCodes = JSON.parse(localStorage.getItem('zat_custom_codes') || '{}');
+      customCodes[key] = { nameAr: name, nameEn: name, whatsappNumber: whatsapp };
+      localStorage.setItem('zat_custom_codes', JSON.stringify(customCodes));
+      
+      alert('تمت إضافة الكود بنجاح!');
+      document.getElementById('new-code-key').value = '';
+      document.getElementById('new-code-name').value = '';
+      document.getElementById('new-code-whatsapp').value = '';
+      renderAdminCodes();
+    };
 
     function renderAdmin() {
       const regs = JSON.parse(localStorage.getItem('zat_registrations') || '[]');
@@ -1289,7 +1376,9 @@
       const error = document.getElementById(`code-error-${lang}`);
       const code = input.value.trim().toUpperCase();
       if (!code) { showMessage(error, lang === 'ar' ? 'يرجى إدخال الكود' : 'Please enter code'); return; }
-      if (DEFAULT_CODES[code]) { activatedGrant = { ...DEFAULT_CODES[code], code }; showCourseSelection(); }
+      
+      const allCodes = getActiveCodes();
+      if (allCodes[code]) { activatedGrant = { ...allCodes[code], code }; showCourseSelection(); }
       else { showMessage(error, lang === 'ar' ? 'الكود غير صحيح' : 'Invalid code'); }
     }
 
@@ -1309,6 +1398,11 @@
         DEFAULT_COURSES.forEach(c => {
           const card = document.createElement('div');
           card.className = 'course-card show';
+          
+          const displayOriginalPrice = c.originalPrice;
+          const displayGrantPrice = (activatedGrant ? c.grantPrice : c.originalPrice) + (activatedGrant ? ADMIN_FEES : 0);
+          const feesNote = activatedGrant ? `<div style="font-size: 11px; color: var(--text-gray);">(شاملة ${ADMIN_FEES} ج رسوم)</div>` : '';
+
           card.innerHTML = `
             <div class="course-card-header">
               <span class="course-card-icon">${c.icon}</span>
@@ -1317,9 +1411,9 @@
             <div class="course-card-title">${lang === 'ar' ? c.nameAr : c.nameEn}</div>
             <div class="course-card-benefit">${lang === 'ar' ? c.benefitAr : c.benefitEn}</div>
             <div style="margin-top: 15px;">
-              <div class="course-card-price">${c.originalPrice} ${lang === 'ar' ? 'ج' : 'EGP'}</div>
-              <div class="course-card-grant-price">${(activatedGrant ? c.grantPrice : c.originalPrice) + ADMIN_FEES} ${lang === 'ar' ? 'ج' : 'EGP'}</div>
-              <div style="font-size: 11px; color: var(--text-gray);">(شاملة ${ADMIN_FEES} ج رسوم)</div>
+              <div class="course-card-price">${displayOriginalPrice} ${lang === 'ar' ? 'ج' : 'EGP'}</div>
+              <div class="course-card-grant-price">${displayGrantPrice} ${lang === 'ar' ? 'ج' : 'EGP'}</div>
+              ${feesNote}
             </div>
           `;
           const cb = card.querySelector('.course-card-checkbox');
@@ -1352,7 +1446,7 @@
       list.innerHTML = '';
       let total = 0, original = 0;
       selectedCourses.forEach(c => {
-        const price = (activatedGrant ? c.grantPrice : c.originalPrice) + ADMIN_FEES;
+        const price = (activatedGrant ? c.grantPrice : c.originalPrice) + (activatedGrant ? ADMIN_FEES : 0);
         total += price; original += c.originalPrice;
         const item = document.createElement('div');
         item.className = 'basket-item';
@@ -1361,7 +1455,7 @@
       });
       let discount = selectedCourses.length >= 5 ? 100 : (selectedCourses.length >= 3 ? 50 : 0);
       let final = total - discount;
-      let inst1 = Math.min(final, selectedCourses.length * (200 + ADMIN_FEES));
+      let inst1 = Math.min(final, selectedCourses.length * (200 + (activatedGrant ? ADMIN_FEES : 0)));
       document.getElementById('basket-floating-count').textContent = selectedCourses.length;
       document.getElementById('basket-original-total').textContent = original + ' ج';
       document.getElementById('basket-final-total').textContent = final + ' ج';
