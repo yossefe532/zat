@@ -13,6 +13,32 @@
       font-style: normal;
     }
 
+    /* Animation Keyframes */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeInLeft {
+      from { opacity: 0; transform: translateX(-30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-up { animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    .animate-right { animation: fadeInRight 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    .animate-left { animation: fadeInLeft 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    .animate-scale { animation: scaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
     :root {
       --primary-red: #DB0000;
       --secondary-red: #FF1A1A;
@@ -1836,8 +1862,11 @@
 
     function showCodeGate() {
       document.getElementById('welcome-hero-section').style.display = 'none';
-      document.getElementById('code-gate-section').style.display = 'flex';
-      document.getElementById('code-gate-section').classList.add('show');
+      const gate = document.getElementById('code-gate-section');
+      gate.style.display = 'flex';
+      gate.classList.remove('animate-scale', 'animate-up', 'animate-right', 'animate-left');
+      void gate.offsetWidth; 
+      gate.classList.add('animate-scale');
       window.scrollTo(0, 0);
     }
 
@@ -1854,8 +1883,11 @@
 
     function showCourseSelection() {
       document.getElementById('code-gate-section').style.display = 'none';
-      document.getElementById('course-selection-section').style.display = 'block';
-      document.getElementById('course-selection-section').classList.add('show');
+      const selection = document.getElementById('course-selection-section');
+      selection.style.display = 'block';
+      selection.classList.remove('animate-scale', 'animate-up', 'animate-right', 'animate-left');
+      void selection.offsetWidth;
+      selection.classList.add('animate-up');
       
       renderCourses();
       window.scrollTo(0, 0);
@@ -1865,9 +1897,11 @@
       ['ar', 'en'].forEach(lang => {
         const container = document.getElementById(`courses-grid-${lang}`);
         container.innerHTML = '';
-        DEFAULT_COURSES.forEach(c => {
+        DEFAULT_COURSES.forEach((c, index) => {
           const card = document.createElement('div');
-          card.className = 'course-card show';
+          card.className = 'course-card';
+          card.style.opacity = '0';
+          card.style.animation = `fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s forwards`;
           
           const displayOriginalPrice = c.originalPrice;
           const displayGrantPrice = (activatedGrant ? c.grantPrice : c.originalPrice) + (activatedGrant ? ADMIN_FEES : 0);
@@ -1947,8 +1981,12 @@
 
     function showRegistrationForm() {
       document.getElementById('course-selection-section').style.display = 'none';
-      document.getElementById('registration-section').style.display = 'block';
-      document.getElementById('registration-section').classList.add('show');
+      const reg = document.getElementById('registration-section');
+      reg.style.display = 'block';
+      reg.classList.remove('animate-scale', 'animate-up', 'animate-right', 'animate-left');
+      void reg.offsetWidth;
+      reg.classList.add('animate-right');
+      
       const lang = currentLang;
       document.getElementById(`final-courses-${lang}`).textContent = selectedCourses.map(c => lang === 'ar' ? c.nameAr : c.nameEn).join(' + ');
       document.getElementById(`final-price-${lang}`).innerHTML = `<b>الإجمالي: ${lastBasketTotals.finalTotal} ج</b> (قسط 1: ${lastBasketTotals.inst1} ج)`;
@@ -1975,7 +2013,9 @@
 
       document.getElementById(`final-code-display-${lang}`).textContent = code;
       document.getElementById(`form-fields-container-${lang}`).style.display = 'none';
-      document.getElementById(`code-display-container-${lang}`).style.display = 'block';
+      const success = document.getElementById(`code-display-container-${lang}`);
+      success.style.display = 'block';
+      success.classList.add('animate-scale');
 
       // Auto open WhatsApp after 3 seconds
       setTimeout(() => {
