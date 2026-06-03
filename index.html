@@ -990,17 +990,11 @@
     <!-- Course Selection Section -->
     <section class="section" id="course-selection-section" style="display: none;">
       <div class="content-ar active">
-        <div style="background: rgba(0,200,0,0.1); border: 2px solid #00aa00; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none;" id="grant-container-ar">
-          <h2 style="color: #00aa00;" id="grant-name-display-ar">تم تفعيل المنحة!</h2>
-        </div>
         <h1 class="section-title">اختر دوراتك التعليمية</h1>
         <div id="courses-grid-ar" class="course-selection-grid"></div>
         <button class="btn btn-primary" id="continue-btn-ar" style="width: 100%; display: none; margin-top: 30px;">متابعة للتسجيل ←</button>
       </div>
       <div class="content-en">
-        <div style="background: rgba(0,200,0,0.1); border: 2px solid #00aa00; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none;" id="grant-container-en">
-          <h2 style="color: #00aa00;" id="grant-name-display-en">Grant Activated!</h2>
-        </div>
         <h1 class="section-title">Choose Your Courses</h1>
         <div id="courses-grid-en" class="course-selection-grid"></div>
         <button class="btn btn-primary" id="continue-btn-en" style="width: 100%; display: none; margin-top: 30px;">Continue to Registration ←</button>
@@ -1114,7 +1108,8 @@
       'Y.EDU': { nameAr: 'منحة يوسف', nameEn: 'Yousef Grant', whatsappNumber: '201029398592' },
       'S.EDU': { nameAr: 'منحة سما', nameEn: 'Sama Grant', whatsappNumber: '201020408172' },
       'H.E4U': { nameAr: 'منحة حبيبة', nameEn: 'Habiba Grant', whatsappNumber: '201034434253' },
-      'MH.E4U': { nameAr: 'منحة محمود', nameEn: 'Mahmoud Grant', whatsappNumber: '201022027996' }
+      'MH.E4U': { nameAr: 'منحة محمود', nameEn: 'Mahmoud Grant', whatsappNumber: '201022027996' },
+      'MT.E4U': { nameAr: 'منحة محمد ممدوح', nameEn: 'Mohamed Mamdouh Grant', whatsappNumber: '201147691853' }
     };
 
     // State
@@ -1303,15 +1298,6 @@
       document.getElementById('course-selection-section').style.display = 'block';
       document.getElementById('course-selection-section').classList.add('show');
       
-      const containerAr = document.getElementById('grant-container-ar');
-      const containerEn = document.getElementById('grant-container-en');
-      if (activatedGrant) {
-        containerAr.style.display = 'block'; containerEn.style.display = 'block';
-        document.getElementById('grant-name-display-ar').textContent = activatedGrant.nameAr;
-        document.getElementById('grant-name-display-en').textContent = activatedGrant.nameEn;
-      } else {
-        containerAr.style.display = 'none'; containerEn.style.display = 'none';
-      }
       renderCourses();
       window.scrollTo(0, 0);
     }
