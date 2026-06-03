@@ -923,6 +923,87 @@
     .section { padding: 80px 20px; }
     .section-title { text-align: center; font-size: 32px; margin-bottom: 40px; color: var(--primary-red); }
 
+    /* Comparison Table Styles */
+    .comparison-container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: var(--card-bg);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      border: 1px solid var(--border-light);
+    }
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+    }
+
+    .comp-table th {
+      background: var(--primary-red);
+      color: white;
+      padding: 20px;
+      font-size: 18px;
+    }
+
+    .comp-table td {
+      padding: 15px;
+      border-bottom: 1px solid var(--border-light);
+      font-weight: 600;
+    }
+
+    .comp-feature {
+      text-align: right;
+      background: var(--light-bg);
+      width: 40%;
+      color: var(--text-gray);
+    }
+    [dir="ltr"] .comp-feature { text-align: left; }
+
+    .comp-check { color: #00aa00; font-size: 20px; font-weight: 900; }
+    .comp-x { color: #ff0000; font-size: 18px; }
+
+    /* Hero v2 Improvements */
+    .hero-v2-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .hero-badge {
+      background: rgba(219, 0, 0, 0.1);
+      color: var(--primary-red);
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-weight: 800;
+      display: inline-block;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .course-card-details {
+      font-size: 13px;
+      color: var(--text-gray);
+      margin-top: 10px;
+      border-top: 1px dashed var(--border-light);
+      padding-top: 10px;
+      text-align: right;
+    }
+    [dir="ltr"] .course-card-details { text-align: left; }
+    
+    .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 5px;
+    }
+    .detail-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--primary-red);
+      border-radius: 50%;
+    }
+
     /* Admin Panel Styles */
     #admin-panel {
       position: fixed;
@@ -1067,15 +1148,90 @@
 
     <!-- Welcome Section -->
     <section class="hero active" id="welcome-hero-section">
-      <div class="content-ar active">
-        <h1 class="hero-title">أهلاً بك في مبادرة ZAT</h1>
-        <p class="hero-subtitle">اختر مهاراتك، فعّل كود المنحة، وابنِ مستقبلك المهني مع Educon Academy</p>
-        <button class="btn btn-primary" id="start-now-ar">🚀 ابدأ الآن</button>
-      </div>
-      <div class="content-en">
-        <h1 class="hero-title">Welcome to ZAT Initiative</h1>
-        <p class="hero-subtitle">Choose your skills, activate your grant code, and build your professional future with Educon Academy</p>
-        <button class="btn btn-primary" id="start-now-en">🚀 Start Now</button>
+      <div class="hero-v2-content">
+        <div class="content-ar active">
+          <span class="hero-badge">مبادرة ذات التعليمية 2026 🎓</span>
+          <h1 class="hero-title">مستقبلك يبدأ هنا.. بخطوات واثقة</h1>
+          <p class="hero-subtitle">انضم لأقوى مجتمع تعليمي في مصر، واستمتع بمزايا حصرية لا تقبل المنافسة مع أفضل الخبراء والمدربين المعتمدين.</p>
+          
+          <div class="comparison-container">
+            <table class="comp-table">
+              <thead>
+                <tr>
+                  <th class="comp-feature">لماذا مبادرة ZAT؟</th>
+                  <th>مبادرة ZAT</th>
+                  <th>المنافسين</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="comp-feature">السعر التنافسي والأفضل</td>
+                  <td class="comp-check">✔</td>
+                  <td class="comp-x">✘</td>
+                </tr>
+                <tr>
+                  <td class="comp-feature">مستوى تعليم رفيع وعالي الجودة</td>
+                  <td class="comp-check">✔</td>
+                  <td class="comp-x">✘</td>
+                </tr>
+                <tr>
+                  <td class="comp-feature">نظام التعلم (Online & Offline)</td>
+                  <td class="comp-check">✔</td>
+                  <td class="comp-x">✘</td>
+                </tr>
+                <tr>
+                  <td class="comp-feature">دعم فني ومتابعة مستمرة</td>
+                  <td class="comp-check">✔</td>
+                  <td class="comp-x">✘</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <button class="btn btn-primary" id="start-now-ar" style="font-size: 20px; padding: 18px 45px;">🚀 ابدأ رحلة التعلم الآن</button>
+        </div>
+        
+        <div class="content-en">
+          <span class="hero-badge">ZAT Educational Initiative 2026 🎓</span>
+          <h1 class="hero-title">Your Future Starts Here.. With Confidence</h1>
+          <p class="hero-subtitle">Join the strongest educational community in Egypt and enjoy exclusive competitive advantages with top experts and certified trainers.</p>
+          
+          <div class="comparison-container">
+            <table class="comp-table">
+              <thead>
+                <tr>
+                  <th class="comp-feature">Why ZAT Initiative?</th>
+                  <th>ZAT Initiative</th>
+                  <th>Competitors</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="comp-feature">Competitive & Best Price</td>
+                  <td class="comp-check">✔</td>
+                  <td class="comp-x">✘</td>
+                </tr>
+                <tr>
+                  <td class="comp-feature">High-Quality Education</td>
+                  <td class="comp-check">✔</td>
+                  <td class="comp-x">✘</td>
+                </tr>
+                <tr>
+                  <td class="comp-feature">Online & Offline Learning</td>
+                  <td class="comp-check">✔</td>
+                  <td class="comp-x">✘</td>
+                </tr>
+                <tr>
+                  <td class="comp-feature">Continuous Support</td>
+                  <td class="comp-check">✔</td>
+                  <td class="comp-x">✘</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <button class="btn btn-primary" id="start-now-en" style="font-size: 20px; padding: 18px 45px;">🚀 Start Learning Now</button>
+        </div>
       </div>
     </section>
 
@@ -1244,12 +1400,130 @@
     // Configuration & Data
     const ADMIN_FEES = 25;
     const DEFAULT_COURSES = [
-      { id: 1, nameAr: 'كورس إنجليزي', nameEn: 'English Course', icon: '🇬🇧', originalPrice: 3000, grantPrice: 650, benefitAr: 'تطوير مهارات التحدث والكتابة بشكل احترافي', benefitEn: 'Professional development of speaking and writing skills' },
-      { id: 2, nameAr: 'كورس ألماني', nameEn: 'German Course', icon: '🇩🇪', originalPrice: 3000, grantPrice: 650, benefitAr: 'تعلم اللغة الألمانية من الصفر حتى المحادثة اليومية', benefitEn: 'Learn German from scratch to daily conversation' },
-      { id: 3, nameAr: 'كورس ICDL', nameEn: 'ICDL Course', icon: '💻', originalPrice: 3000, grantPrice: 650, benefitAr: 'إتقان مهارات الحاسب الآلي والبرامج المكتبية الأساسية', benefitEn: 'Mastering computer skills and essential office programs' },
-      { id: 4, nameAr: 'موشن جرافيك', nameEn: 'Motion Graphics', icon: '🎬', originalPrice: 3000, grantPrice: 650, benefitAr: 'تحريك الرسوم وتصميم الفيديو والمونتاج الاحترافي', benefitEn: 'Animation, video design, and professional editing' },
-      { id: 5, nameAr: 'جرافيك ديزاين', nameEn: 'Graphic Design', icon: '🎨', originalPrice: 3000, grantPrice: 650, benefitAr: 'احتراف برامج التصميم العالمية وتصميم الهويات البصرية', benefitEn: 'Mastering international design software and visual identity design' },
-      { id: 6, nameAr: 'برمجة HTML & CSS', nameEn: 'HTML & CSS Programming', icon: '🌐', originalPrice: 3000, grantPrice: 650, benefitAr: 'بناء وتطوير المواقع الإلكترونية من البداية بشكل عملي', benefitEn: 'Practical building and development of websites from scratch' }
+      { 
+        id: 1, 
+        nameAr: 'كورس إنجليزي', 
+        nameEn: 'English Course', 
+        icon: '🇬🇧', 
+        originalPrice: 3000, 
+        grantPrice: 650, 
+        benefitAr: 'تطوير مهارات التحدث والكتابة بشكل احترافي', 
+        benefitEn: 'Professional development of speaking and writing skills',
+        detailsAr: [
+          'إجمالي 32 ساعة دراسية',
+          'سيتم فتح التسجيل للدفعة الثانية',
+          'الكورس الأعلى إقبالاً بين جميع الكورسات'
+        ],
+        detailsEn: [
+          'Total 32 study hours',
+          'Registration for 2nd batch soon',
+          'Highest demand among all courses'
+        ]
+      },
+      { 
+        id: 2, 
+        nameAr: 'كورس ألماني', 
+        nameEn: 'German Course', 
+        icon: '🇩🇪', 
+        originalPrice: 3000, 
+        grantPrice: 650, 
+        benefitAr: 'تعلم اللغة الألمانية من الصفر حتى المحادثة اليومية', 
+        benefitEn: 'Learn German from scratch to daily conversation',
+        detailsAr: [
+          'إجمالي 20 ساعة دراسية',
+          'فتح التسجيل للدفعة الثانية',
+          'الأكثر إقبالاً من الكادر الطبي والتمريض',
+          'يساعد في إجراء معادلات السفر للخارج'
+        ],
+        detailsEn: [
+          'Total 20 study hours',
+          'Registration for 2nd batch soon',
+          'Highest demand from medical staff',
+          'Helps with travel equivalence exams'
+        ]
+      },
+      { 
+        id: 3, 
+        nameAr: 'كورس ICDL', 
+        nameEn: 'ICDL Course', 
+        icon: '💻', 
+        originalPrice: 3000, 
+        grantPrice: 650, 
+        benefitAr: 'إتقان مهارات الحاسب الآلي والبرامج المكتبية الأساسية', 
+        benefitEn: 'Mastering computer skills and essential office programs',
+        detailsAr: [
+          'إجمالي 16 ساعة دراسية (الدفعة الأولى)',
+          'مستوى تعليم عالي الجودة',
+          'إتاحة حجز الاختبارات الدولية المعتمدة'
+        ],
+        detailsEn: [
+          'Total 16 study hours (1st Batch)',
+          'High-quality educational level',
+          'Accredited international exams available'
+        ]
+      },
+      { 
+        id: 4, 
+        nameAr: 'كورس فوتوشوب', 
+        nameEn: 'Photoshop Course', 
+        icon: '🎬', 
+        originalPrice: 3000, 
+        grantPrice: 650, 
+        benefitAr: 'احتراف تعديل الصور والتصميم الإبداعي', 
+        benefitEn: 'Mastering image editing and creative design',
+        detailsAr: [
+          'إجمالي 16 ساعة دراسية',
+          'نظام تعلم أوفلاين (Offline)',
+          'أكثر من 10 تاسكات عملية تطبيقية'
+        ],
+        detailsEn: [
+          'Total 16 study hours',
+          'Offline learning system',
+          'More than 10 practical applied tasks'
+        ]
+      },
+      { 
+        id: 5, 
+        nameAr: 'موشن جرافيك', 
+        nameEn: 'Motion Graphics', 
+        icon: '🎨', 
+        originalPrice: 3000, 
+        grantPrice: 650, 
+        benefitAr: 'تحريك الرسوم وتصميم الفيديو والمونتاج الاحترافي', 
+        benefitEn: 'Animation, video design, and professional editing',
+        detailsAr: [
+          'إجمالي 16 ساعة دراسية',
+          'مدرب دولي معتمد',
+          'نظام تعلم (Online & Offline)',
+          'مشروع تخرج تطبيقي في نهاية الكورس'
+        ],
+        detailsEn: [
+          'Total 16 study hours',
+          'Certified International Trainer',
+          'Online & Offline learning system',
+          'Applied graduation project at the end'
+        ]
+      },
+      { 
+        id: 6, 
+        nameAr: 'البرمجة الأساسية', 
+        nameEn: 'Basic Programming', 
+        icon: '🌐', 
+        originalPrice: 3000, 
+        grantPrice: 650, 
+        benefitAr: 'بناء وتطوير المواقع الإلكترونية (HTML & CSS)', 
+        benefitEn: 'Building and developing websites (HTML & CSS)',
+        detailsAr: [
+          'إجمالي 16 ساعة دراسية',
+          'شرح أساسيات HTML و CSS مع مدرب معتمد',
+          'توفير أجهزة للتعلم لمن لا يملك جهاز خاص'
+        ],
+        detailsEn: [
+          'Total 16 study hours',
+          'HTML & CSS basics with certified trainer',
+          'Devices provided for those who don\'t own one'
+        ]
+      }
     ];
 
     const DEFAULT_CODES = {
@@ -1519,6 +1793,14 @@
           const displayGrantPrice = (activatedGrant ? c.grantPrice : c.originalPrice) + (activatedGrant ? ADMIN_FEES : 0);
           const feesNote = activatedGrant ? `<div style="font-size: 11px; color: var(--text-gray);">(شاملة ${ADMIN_FEES} ج رسوم)</div>` : '';
 
+          const details = lang === 'ar' ? c.detailsAr : c.detailsEn;
+          const detailsHtml = details.map(d => `
+            <div class="detail-item">
+              <span class="detail-dot"></span>
+              <span>${d}</span>
+            </div>
+          `).join('');
+
           card.innerHTML = `
             <div class="course-card-header">
               <span class="course-card-icon">${c.icon}</span>
@@ -1526,6 +1808,9 @@
             </div>
             <div class="course-card-title">${lang === 'ar' ? c.nameAr : c.nameEn}</div>
             <div class="course-card-benefit">${lang === 'ar' ? c.benefitAr : c.benefitEn}</div>
+            <div class="course-card-details">
+              ${detailsHtml}
+            </div>
             <div style="margin-top: 15px;">
               <div class="course-card-price">${displayOriginalPrice} ${lang === 'ar' ? 'ج' : 'EGP'}</div>
               <div class="course-card-grant-price">${displayGrantPrice} ${lang === 'ar' ? 'ج' : 'EGP'}</div>
