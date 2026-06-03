@@ -923,6 +923,40 @@
     .section { padding: 80px 20px; }
     .section-title { text-align: center; font-size: 32px; margin-bottom: 40px; color: var(--primary-red); }
 
+    /* Modal for checking code */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 450px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-gray);
+    }
+
     /* Comparison Table Styles */
     .comparison-container {
       max-width: 900px;
@@ -1041,11 +1075,29 @@
       <div class="logo-divider"></div>
       <img src="https://i.postimg.cc/p9N0tpnj/image.png" alt="ZAT Initiative" class="top-bar-logo zat-logo">
     </div>
-    <div class="share-icons">
-      <button class="share-icon facebook" id="share-facebook">f</button>
-      <button class="share-icon whatsapp" id="share-whatsapp">W</button>
-      <button class="share-icon twitter" id="share-twitter">X</button>
-      <button class="share-icon copy" id="share-copy">⛓</button>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <button id="check-code-btn" class="btn" style="background: var(--light-bg); border: 1px solid var(--primary-red); color: var(--primary-red); padding: 8px 15px; font-size: 13px;">
+        <span class="content-ar active">🔍 معرفة كودي النهائي</span>
+        <span class="content-en">🔍 Find My Code</span>
+      </button>
+      <div class="share-icons">
+        <button class="share-icon facebook" id="share-facebook">f</button>
+        <button class="share-icon whatsapp" id="share-whatsapp">W</button>
+        <button class="share-icon twitter" id="share-twitter">X</button>
+        <button class="share-icon copy" id="share-copy">⛓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Code Check Modal -->
+  <div id="code-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="content-ar active" style="margin-bottom: 20px;">استعلم عن كود التسجيل الخاص بك</h3>
+      <h3 class="content-en" style="margin-bottom: 20px;">Find Your Registration Code</h3>
+      <input type="tel" id="search-phone-input" class="grant-input" placeholder="أدخل رقم الهاتف المسجل">
+      <div id="search-result" style="margin: 20px 0; font-weight: 800; font-size: 18px;"></div>
+      <button id="search-code-action" class="btn btn-primary" style="width: 100%;">بحث</button>
+      <button id="close-modal-btn" class="no-code-btn" style="margin-top: 15px;">إغلاق</button>
     </div>
   </div>
 
@@ -1300,8 +1352,9 @@
               <label class="input-label" style="text-align: center;">كود التسجيل الخاص بك</label>
               <span id="final-code-display-ar" class="final-code-value"></span>
             </div>
-            <div class="alert-whatsapp">⚠️ يجب إرسال هذا الكود عبر واتساب لتأكيد الحجز.</div>
-            <button class="whatsapp-btn" id="whatsapp-btn-ar">📱 إرسال للواتساب</button>
+            <div class="alert-whatsapp" style="border-right: 4px solid #ff0000; background: rgba(255,0,0,0.1); color: #ff0000;">⚠️ تنبيه هام: يجب إرسال هذا الكود عبر واتساب الآن لتأكيد حجزك، وإلا سيتم إلغاء الطلب تلقائياً!</div>
+            <button class="whatsapp-btn" id="whatsapp-btn-ar">📱 إرسال للواتساب الآن</button>
+            <button class="btn" onclick="window.location.reload()" style="width: 100%; margin-top: 15px; background: var(--border-light); color: var(--text-dark);">➕ تسجيل شخص جديد</button>
           </div>
         </div>
       </div>
@@ -1330,8 +1383,9 @@
               <label class="input-label" style="text-align: center;">Your Registration Code</label>
               <span id="final-code-display-en" class="final-code-value"></span>
             </div>
-            <div class="alert-whatsapp">⚠️ You must send this code via WhatsApp to confirm booking.</div>
-            <button class="whatsapp-btn" id="whatsapp-btn-en">📱 Send to WhatsApp</button>
+            <div class="alert-whatsapp" style="border-left: 4px solid #ff0000; background: rgba(255,0,0,0.1); color: #ff0000;">⚠️ IMPORTANT: You must send this code via WhatsApp now to confirm your booking, otherwise it will be cancelled!</div>
+            <button class="whatsapp-btn" id="whatsapp-btn-en">📱 Send to WhatsApp Now</button>
+            <button class="btn" onclick="window.location.reload()" style="width: 100%; margin-top: 15px; background: var(--border-light); color: var(--text-dark);">➕ Register New Person</button>
           </div>
         </div>
       </div>
@@ -1750,6 +1804,32 @@
       document.getElementById('whatsapp-btn-ar').onclick = () => sendWhatsApp('ar');
       document.getElementById('whatsapp-btn-en').onclick = () => sendWhatsApp('en');
 
+      // Modal logic
+      const modal = document.getElementById('code-modal');
+      const openModalBtn = document.getElementById('check-code-btn');
+      const closeModalBtn = document.getElementById('close-modal-btn');
+      const searchBtn = document.getElementById('search-code-action');
+
+      openModalBtn.onclick = () => { modal.style.display = 'flex'; };
+      closeModalBtn.onclick = () => { modal.style.display = 'none'; };
+      window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+      searchBtn.onclick = () => {
+        const phone = document.getElementById('search-phone-input').value.trim();
+        const resultDiv = document.getElementById('search-result');
+        if (!phone) return alert('يرجى إدخال رقم الهاتف');
+        
+        const regs = JSON.parse(localStorage.getItem('zat_registrations') || '[]');
+        const user = regs.find(r => r.phone === phone);
+        
+        if (user) {
+          resultDiv.innerHTML = `<span style="color:#00aa00;">كودك هو: ${user.finalCode}</span>`;
+        } else {
+          resultDiv.innerHTML = `<span style="color:#ff0000;">الرقم غير مسجل. يرجى التسجيل أولاً</span>`;
+          setTimeout(() => { modal.style.display = 'none'; window.scrollTo(0, 0); }, 2000);
+        }
+      };
+
       // Global reference for basket opening
       window.openBasket = openBasket;
     }
@@ -1896,6 +1976,11 @@
       document.getElementById(`final-code-display-${lang}`).textContent = code;
       document.getElementById(`form-fields-container-${lang}`).style.display = 'none';
       document.getElementById(`code-display-container-${lang}`).style.display = 'block';
+
+      // Auto open WhatsApp after 3 seconds
+      setTimeout(() => {
+        sendWhatsApp(lang);
+      }, 3000);
     }
 
     function sendWhatsApp(lang) {
