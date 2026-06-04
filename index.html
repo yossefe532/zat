@@ -69,7 +69,7 @@
       font-family: 'Cairo', sans-serif;
     }
 
-    h1, h2, h3, .sidebar-title, .section-title, .hero-title, .basket-title, .course-card-title {
+    h1, h2, h3, .sidebar-title, .section-title, .hero-title, .basket-title, .course-card-title, .instructions-title {
       font-family: 'CustomFont', 'Cairo', sans-serif !important;
     }
 
@@ -925,6 +925,66 @@
       margin: 10px 0;
     }
 
+    /* Registration Instructions */
+    .reg-instructions {
+      background: var(--light-bg);
+      border: 1px solid var(--border-light);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 25px;
+      text-align: right;
+    }
+
+    .instructions-title {
+      background: var(--primary-red);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .instructions-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .instructions-list li {
+      position: relative;
+      padding-right: 25px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-dark);
+    }
+
+    .instructions-list li::before {
+      content: '●';
+      position: absolute;
+      right: 0;
+      color: var(--primary-red);
+      font-size: 18px;
+    }
+
+    .agree-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border-light);
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .agree-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
     .alert-whatsapp {
       background: #fff3e0;
       border-right: 4px solid #ef6c00;
@@ -1369,8 +1429,29 @@
               <div id="final-price-ar" style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;"></div>
             </div>
 
+            <!-- Instructions Section Arabic -->
+            <div class="reg-instructions">
+              <div class="instructions-title">تعليمات مبادرة ذات الرقمية</div>
+              <ul class="instructions-list">
+                <li>يتطلب تسجيلك في إحدى منح مبادرة ذات الرقمية للخصم المجاني أو للخصم المخصص.</li>
+                <li>السعر 3000 جنيه فقط في حال عدم وجود كود خصم.</li>
+                <li>السعر لمنحة كاملة 650 جنيه فقط في حال وجود كود خصم.</li>
+                <li>سعر ملئ الأبليكيشن 25 جنيه فقط لا غير.</li>
+                <li>القسط الأول 200 جنيه + 25 جنيه رسوم ملئ الاستمارة، والقسط الثاني 450 جنيه تدفع في السيشن الثاني إلزامياً.</li>
+                <li>إمكانية اختيار أكثر من منحة بشرط القدرة على الالتزام في تسليم التاسكات والحضور.</li>
+                <li>إمكانية اختيار الدراسة أونلاين أو أوفلاين حسب الرغبة.</li>
+                <li>الدراسة في الكورس الأساسي تكون 16 ساعة تدريبية.</li>
+                <li>يستلم المتدرب شهادة حضور لكل تدريب بعلامة مائية هولوجرام لمنع التقليد.</li>
+                <li>يفصل الطالب من المنحة في حال تجاوز غياب 3 محاضرات بدون عذر، ولا يسترد مبلغ المنحة.</li>
+              </ul>
+              <div class="agree-container">
+                <input type="checkbox" id="agree-check-ar" class="agree-checkbox">
+                <label for="agree-check-ar">أوافق وأقر أني قرأت كل التعليمات الموضحة أعلاه</label>
+              </div>
+            </div>
+
             <div id="form-error-ar" class="error-message"></div>
-            <button class="btn btn-primary" id="submit-registration-ar" style="width: 100%;">تأكيد التسجيل</button>
+            <button class="btn btn-primary" id="submit-registration-ar" style="width: 100%;" disabled>تأكيد التسجيل</button>
           </div>
 
           <div id="code-display-container-ar" style="display: none;">
@@ -1400,8 +1481,33 @@
               <div id="final-price-en" style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;"></div>
             </div>
 
+            <!-- Instructions Section English -->
+            <div class="reg-instructions" style="text-align: left;">
+              <div class="instructions-title">ZAT Digital Initiative Instructions</div>
+              <ul class="instructions-list" style="padding-left: 25px; padding-right: 0;">
+                <style>
+                  [dir="ltr"] .instructions-list li::before { right: auto; left: 0; }
+                  [dir="ltr"] .instructions-list li { padding-right: 0; padding-left: 25px; }
+                </style>
+                <li>Registration requires joining one of ZAT Digital Initiative grants (Free or Custom discount).</li>
+                <li>Price is 3000 EGP only if no discount code is provided.</li>
+                <li>Full grant price is 650 EGP only if a discount code is provided.</li>
+                <li>Application fee is 25 EGP only.</li>
+                <li>1st Installment: 200 EGP + 25 EGP application fee. 2nd Installment: 450 EGP mandatory payment in the second session.</li>
+                <li>Multiple grants can be selected if the student can commit to attendance and tasks.</li>
+                <li>Study options: Online or Offline as per preference.</li>
+                <li>Basic course study duration is 16 training hours.</li>
+                <li>Students receive a certificate of attendance with a hologram watermark for each training.</li>
+                <li>Dismissal from the grant occurs if more than 3 lectures are missed without an excuse; fees are non-refundable.</li>
+              </ul>
+              <div class="agree-container">
+                <input type="checkbox" id="agree-check-en" class="agree-checkbox">
+                <label for="agree-check-en">I agree and acknowledge that I have read all the instructions above</label>
+              </div>
+            </div>
+
             <div id="form-error-en" class="error-message"></div>
-            <button class="btn btn-primary" id="submit-registration-en" style="width: 100%;">Confirm Registration</button>
+            <button class="btn btn-primary" id="submit-registration-en" style="width: 100%;" disabled>Confirm Registration</button>
           </div>
 
           <div id="code-display-container-en" style="display: none;">
@@ -1829,6 +1935,15 @@
       document.getElementById('submit-registration-en').onclick = () => submitForm('en');
       document.getElementById('whatsapp-btn-ar').onclick = () => sendWhatsApp('ar');
       document.getElementById('whatsapp-btn-en').onclick = () => sendWhatsApp('en');
+
+      // Agreement Checkbox Logic
+      const agreeCheckAr = document.getElementById('agree-check-ar');
+      const submitBtnAr = document.getElementById('submit-registration-ar');
+      const agreeCheckEn = document.getElementById('agree-check-en');
+      const submitBtnEn = document.getElementById('submit-registration-en');
+
+      if (agreeCheckAr) agreeCheckAr.onchange = (e) => { submitBtnAr.disabled = !e.target.checked; };
+      if (agreeCheckEn) agreeCheckEn.onchange = (e) => { submitBtnEn.disabled = !e.target.checked; };
 
       // Modal logic
       const modal = document.getElementById('code-modal');
