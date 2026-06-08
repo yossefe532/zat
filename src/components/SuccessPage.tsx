@@ -1,8 +1,9 @@
 'use client';
 
-import { Check, MessageCircle, Copy, RefreshCw, Home } from 'lucide-react';
+import { Check, MessageCircle, Copy, RefreshCw, Home, ShieldCheck } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface SuccessPageProps {
   lang: 'ar' | 'en';
@@ -80,119 +81,128 @@ Payment Details:
   };
 
   return (
-    <section className="min-h-[80vh] px-4 py-16 flex items-center justify-center">
-      <div className="container mx-auto max-w-xl text-center space-y-8">
-        <div className="space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-success/10 animate-fadeIn">
-            <Check className="w-10 h-10 text-success" />
+    <section className="min-h-screen px-4 py-20 bg-background relative overflow-hidden flex items-center justify-center">
+      {/* Legacy background effect */}
+      <div className="fixed inset-0 pointer-events-none -z-10 opacity-10 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=90')] bg-cover bg-center" />
+
+      <div className="container mx-auto max-w-2xl">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-card rounded-[3rem] border-4 border-primary/20 shadow-2xl p-8 md:p-12 space-y-10 text-center relative"
+        >
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full bg-success flex items-center justify-center shadow-xl shadow-success/30 border-8 border-background">
+            <ShieldCheck className="w-12 h-12 text-white" />
+          </div>
+
+          <div className="space-y-6 pt-8">
+            <h1 className="text-4xl md:text-5xl font-black title-font text-success">
+              {isAr ? 'تم التسجيل بنجاح!' : 'Success!'}
+            </h1>
+            <p className="text-lg md:text-xl font-bold text-muted-foreground leading-relaxed">
+              {isAr 
+                ? 'شكراً لتسجيلك في مبادرة ذات. يرجى إرسال الكود أدناه عبر واتساب فوراً لتأكيد مكانك قبل انتهاء الصلاحية.'
+                : 'Thank you for registering. Please send the code via WhatsApp immediately to confirm your spot.'}
+            </p>
           </div>
           
-          <h1 className="text-3xl md:text-4xl font-bold animate-fadeIn stagger-1" style={{ opacity: 0 }}>
-            {isAr ? 'تم التسجيل بنجاح!' : 'Registration Successful!'}
-          </h1>
-          
-          <p className="text-muted-foreground animate-fadeIn stagger-2" style={{ opacity: 0 }}>
-            {isAr 
-              ? 'شكراً لتسجيلك في مبادرة ذات. يرجى إرسال الكود أدناه عبر واتساب لإتمام الحجز.'
-              : 'Thank you for registering with ZAT Initiative. Please send the code below via WhatsApp to complete your booking.'}
-          </p>
-        </div>
-        
-        <div className="rounded-2xl border bg-card p-6 space-y-6 animate-fadeIn stagger-3" style={{ opacity: 0 }}>
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">
+          <div className="bg-primary/5 rounded-3xl p-8 space-y-4 border-2 border-primary/10 relative group">
+            <p className="text-sm font-black text-primary uppercase tracking-widest">
               {isAr ? 'كود التسجيل الخاص بك' : 'Your Registration Code'}
             </p>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-3xl font-mono font-bold text-primary tracking-wider">
+            <div className="flex items-center justify-center gap-4">
+              <span className="text-5xl md:text-6xl font-black font-mono text-primary tracking-tighter">
                 {registrationData.registrationCode}
               </span>
               <button
                 onClick={copyCode}
-                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                className="p-3 rounded-2xl bg-white shadow-md hover:bg-primary hover:text-white transition-all group-active:scale-95"
                 title={isAr ? 'نسخ الكود' : 'Copy Code'}
               >
-                <Copy className="w-5 h-5 text-muted-foreground" />
+                <Copy className="w-6 h-6" />
               </button>
             </div>
           </div>
           
-          <div className="border-t pt-6 space-y-3">
-            <h3 className="font-semibold text-right">
-              {isAr ? 'تفاصيل التسجيل' : 'Registration Details'}
-            </h3>
-            
-            <div className="text-right space-y-2 text-sm">
-              <p>
-                <span className="text-muted-foreground ml-2">{isAr ? 'الاسم:' : 'Name:'}</span>
-                <span className="font-medium">{registrationData.fullName}</span>
-              </p>
-              <p>
-                <span className="text-muted-foreground ml-2">{isAr ? 'الهاتف:' : 'Phone:'}</span>
-                <span className="font-medium">{registrationData.phone}</span>
-              </p>
-              <p>
-                <span className="text-muted-foreground ml-2">{isAr ? 'الكورسات:' : 'Courses:'}</span>
-                <span className="font-medium">
-                  {selectedCourses.map(c => isAr ? c.nameAr : c.nameEn).join(', ')}
-                </span>
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
+            <div className="space-y-4 p-6 rounded-2xl bg-muted/30 border border-border/50">
+              <h3 className="font-black text-lg title-font text-primary border-b border-dashed border-primary/20 pb-2 mb-4">
+                {isAr ? 'بيانات المسجل' : 'Registrant Data'}
+              </h3>
+              <div className="space-y-3 font-bold text-muted-foreground">
+                <p className="flex justify-between">
+                  <span>{isAr ? 'الاسم:' : 'Name:'}</span>
+                  <span className="text-foreground">{registrationData.fullName}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span>{isAr ? 'الهاتف:' : 'Phone:'}</span>
+                  <span className="text-foreground">{registrationData.phone}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span>{isAr ? 'العمر:' : 'Age:'}</span>
+                  <span className="text-foreground">{registrationData.age} {isAr ? 'عام' : 'years'}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+              <h3 className="font-black text-lg title-font text-primary border-b border-dashed border-primary/20 pb-2 mb-4">
+                {isAr ? 'الدفع والأقساط' : 'Payment & Installments'}
+              </h3>
+              <div className="space-y-3 font-bold">
+                <div className="flex justify-between text-xl text-primary">
+                  <span>{isAr ? 'الإجمالي:' : 'Total:'}</span>
+                  <span className="font-black">{formatPrice(calculations.total)} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+                <div className="flex justify-between text-success">
+                  <span>{isAr ? 'القسط 1:' : 'Inst. 1:'}</span>
+                  <span>{formatPrice(calculations.firstInstallment)} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{isAr ? 'القسط 2:' : 'Inst. 2:'}</span>
+                  <span>{formatPrice(calculations.secondInstallment)} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+              </div>
             </div>
           </div>
           
-          <div className="bg-muted rounded-xl p-4 space-y-2">
-            <p className="text-sm font-medium">{isAr ? 'الدفع' : 'Payment'}</p>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{isAr ? 'الإجمالي' : 'Total'}</span>
-              <span className="font-bold text-primary">{formatPrice(calculations.total)} {isAr ? 'جنيه' : 'EGP'}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{isAr ? 'القسط الأول' : '1st Installment'}</span>
-              <span>{formatPrice(calculations.firstInstallment)} {isAr ? 'جنيه' : 'EGP'}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{isAr ? 'القسط الثاني' : '2nd Installment'}</span>
-              <span>{formatPrice(calculations.secondInstallment)} {isAr ? 'جنيه' : 'EGP'}</span>
-            </div>
-          </div>
-          
-          <div className="bg-warning/10 rounded-xl p-4">
-            <p className="text-sm text-warning-foreground">
+          <div className="bg-destructive/10 rounded-2xl p-6 border-2 border-destructive/20 animate-pulse">
+            <p className="text-base font-black text-destructive leading-relaxed">
               ⚠️ {isAr 
-                ? `صلاحية الكود 3 أيام، ينتهي في ${expiryDay} ${expiryDateStr}`
-                : `Code valid for 3 days, expires on ${expiryDay}, ${expiryDateStr}`}
+                ? `تنبيه: الكود صالح لـ 3 أيام فقط! ينتهي يوم ${expiryDay} الموافق ${expiryDateStr}`
+                : `Alert: Code valid for 3 days! Expires on ${expiryDay}, ${expiryDateStr}`}
             </p>
           </div>
-        </div>
-        
-        <div className="space-y-4 animate-fadeIn stagger-4" style={{ opacity: 0 }}>
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-3 w-full py-4 rounded-xl bg-[#25D366] text-white font-semibold hover:bg-[#25D366]/90 transition-colors"
-          >
-            <MessageCircle className="w-6 h-6" />
-            {isAr ? 'إرسال عبر واتساب' : 'Send via WhatsApp'}
-          </a>
           
-          <div className="flex gap-4">
-            <button
-              onClick={onReset}
-              className="flex-1 py-3 rounded-xl border border-border bg-card text-foreground font-medium hover:bg-accent transition-colors flex items-center justify-center gap-2"
+          <div className="space-y-6 pt-4">
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-4 w-full py-6 rounded-2xl bg-[#25D366] text-white font-black text-2xl hover:bg-[#25D366]/90 transition-all shadow-xl shadow-[#25D366]/30 hover:scale-[1.02]"
             >
-              <Home className="w-5 h-5" />
-              {isAr ? 'الرئيسية' : 'Home'}
-            </button>
-            <button
-              onClick={onReset}
-              className="flex-1 py-3 rounded-xl border border-border bg-card text-foreground font-medium hover:bg-accent transition-colors flex items-center justify-center gap-2"
-            >
-              <RefreshCw className="w-5 h-5" />
-              {isAr ? 'تسجيل جديد' : 'New Registration'}
-            </button>
+              <MessageCircle className="w-8 h-8" />
+              {isAr ? 'تأكيد الحجز عبر واتساب' : 'Confirm via WhatsApp'}
+            </a>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={onReset}
+                className="flex-1 py-4 rounded-2xl border-2 border-border bg-card text-foreground font-black text-lg hover:bg-muted/50 transition-all flex items-center justify-center gap-2"
+              >
+                <Home className="w-6 h-6" />
+                {isAr ? 'العودة للرئيسية' : 'Back to Home'}
+              </button>
+              <button
+                onClick={onReset}
+                className="flex-1 py-4 rounded-2xl border-2 border-border bg-card text-foreground font-black text-lg hover:bg-muted/50 transition-all flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-6 h-6" />
+                {isAr ? 'تسجيل جديد' : 'New Registration'}
+              </button>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, Gift, X, Check } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Gift, X, Check, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface CodeGateProps {
   lang: 'ar' | 'en';
@@ -26,108 +27,130 @@ export function CodeGate({ lang, onVerify, onBack, onSkip }: CodeGateProps) {
     setError('');
     
     // Simulate verification delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 800));
     
     if (onVerify(code)) {
-      // Success - parent will handle navigation
+      // Success
     } else {
-      setError(isAr ? 'كود غير صحيح أو غير مفعل' : 'Invalid or inactive code');
+      setError(isAr ? 'الكود غير صحيح أو غير مفعل' : 'Invalid or inactive code');
     }
     
     setLoading(false);
   };
 
   return (
-    <section className="min-h-[80vh] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md space-y-8">
+    <section className="min-h-screen flex items-center justify-center px-4 py-20 bg-background relative overflow-hidden">
+      {/* Legacy background effect */}
+      <div className="fixed inset-0 pointer-events-none -z-10 opacity-10 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=90')] bg-cover bg-center" />
+
+      <div className="w-full max-w-xl">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-2 text-primary font-black hover:scale-105 transition-transform mb-12"
         >
-          <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-          {isAr ? 'العودة' : 'Back'}
+          <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+          {isAr ? 'العودة للرئيسية' : 'Back to Home'}
         </button>
         
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
-            <Gift className="w-8 h-8 text-primary" />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-card rounded-[2.5rem] border-2 border-border shadow-2xl p-8 md:p-12 space-y-10"
+        >
+          <div className="text-center space-y-6">
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/5 border-4 border-primary/10">
+              <Lock className="w-12 h-12 text-primary" />
+            </div>
+            <h2 className="text-4xl font-black title-font text-primary">
+              {isAr ? 'أدخل كود المنحة الخاص بك' : 'Enter Your Grant Code'}
+            </h2>
+            <p className="text-lg text-muted-foreground font-bold">
+              {isAr 
+                ? '🔒 كود ZAT السري - أدخله هنا لتفعيل خصم المنحة فوراً'
+                : '🔒 ZAT Secret Code - Enter it here to activate your discount'}
+            </p>
           </div>
-          <h2 className="text-3xl font-bold">
-            {isAr ? 'أدخل كود المنحة' : 'Enter Grant Code'}
-          </h2>
-          <p className="text-muted-foreground">
-            {isAr 
-              ? 'لديك كود خصم خاص؟ أدخله هنا للحصول على الأسعار المخفضة'
-              : 'Have a special discount code? Enter it here to get reduced prices'}
-          </p>
-        </div>
-        
-        <div className="space-y-4">
-          <div className="relative">
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => {
-                setCode(e.target.value.toUpperCase());
-                setError('');
-              }}
-              placeholder={isAr ? 'مثال: Y.EDU' : 'Example: Y.EDU'}
-              className="w-full px-4 py-4 text-center text-xl font-mono uppercase rounded-xl border-2 border-border bg-card focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              dir="ltr"
-            />
-            {code && (
-              <button
-                onClick={() => setCode('')}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-base font-black text-foreground px-2">
+                {isAr ? 'كود المنحة' : 'Grant Code'}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={code}
+                  onChange={(e) => {
+                    setCode(e.target.value.toUpperCase());
+                    setError('');
+                  }}
+                  placeholder={isAr ? 'أدخل الكود هنا (مثلاً: Y.EDU)' : 'Enter code here (e.g., Y.EDU)'}
+                  className="w-full px-8 py-6 text-center text-3xl font-black uppercase rounded-2xl border-4 border-border bg-background focus:border-primary focus:outline-none focus:ring-8 focus:ring-primary/5 transition-all tracking-widest"
+                  dir="ltr"
+                />
+                {code && (
+                  <button
+                    onClick={() => setCode('')}
+                    className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <X className="w-8 h-8" />
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {error && (
+              <motion.p 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-destructive text-base font-black text-center bg-destructive/10 py-3 rounded-xl border border-destructive/20"
               >
-                <X className="w-5 h-5" />
-              </button>
+                {error}
+              </motion.p>
             )}
+            
+            <button
+              onClick={handleVerify}
+              disabled={loading}
+              className="w-full py-6 rounded-2xl bg-primary text-primary-foreground font-black text-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-3 hover:scale-[1.02]"
+            >
+              {loading ? (
+                <span className="animate-pulse">{isAr ? 'جاري التحقق...' : 'Verifying...'}</span>
+              ) : (
+                <>
+                  {isAr ? 'تفعيل المنحة الآن' : 'Activate Grant Now'}
+                  <Check className="w-8 h-8" />
+                </>
+              )}
+            </button>
           </div>
           
-          {error && (
-            <p className="text-destructive text-sm text-center">{error}</p>
-          )}
+          <div className="relative pt-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t-2 border-border border-dashed" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-6 bg-card text-muted-foreground font-black text-lg">
+                {isAr ? 'أو' : 'Or'}
+              </span>
+            </div>
+          </div>
           
-          <button
-            onClick={handleVerify}
-            disabled={loading}
-            className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <span className="animate-pulse">{isAr ? 'جارٍ التحقق...' : 'Verifying...'}</span>
-            ) : (
-              <>
-                {isAr ? 'تحقق من الكود' : 'Verify Code'}
-                <Check className="w-5 h-5" />
-              </>
-            )}
-          </button>
-        </div>
-        
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
+          <div className="space-y-6">
+            <button
+              onClick={onSkip}
+              className="w-full py-5 rounded-2xl border-2 border-border bg-background text-foreground font-black text-xl hover:bg-muted/50 transition-all hover:border-primary/50"
+            >
+              {isAr ? 'ليس لدي كود منحة' : "I don't have a code"}
+            </button>
+            
+            <p className="text-center text-base text-muted-foreground font-bold">
+              {isAr 
+                ? '💡 يمكنك الاستمرار والتسجيل بالسعر الأصلي (3000 ج)'
+                : '💡 You can continue and register at the original price (3000 EGP)'}
+            </p>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-background text-muted-foreground">
-              {isAr ? 'أو' : 'Or'}
-            </span>
-          </div>
-        </div>
-        
-        <button
-          onClick={onSkip}
-          className="w-full py-4 rounded-xl border-2 border-border bg-card text-foreground font-semibold hover:bg-accent transition-colors"
-        >
-          {isAr ? 'متابعة بدون كود' : 'Continue Without Code'}
-        </button>
-        
-        <p className="text-center text-sm text-muted-foreground">
-          {isAr 
-            ? 'لا تملك كود؟ يمكنك التسجيل بالسعر الكامل'
-            : "Don't have a code? You can register at full price"}
-        </p>
+        </motion.div>
       </div>
     </section>
   );

@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cairo } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
-  title: "مبادرة ذات - ZAT Initiative",
-  description: "مبادرة ذات للتعليم والتطوير - دورات تدريبية بأسعار رمزية",
+  title: "ZAT Initiative - منحة ZAT التعليمية",
+  description: "انضم لأقوى مجتمع تعليمي في مصر، واستمتع بمزايا حصرية لا تقبل المنافسة مع أفضل الخبراء والمدربين المعتمدين.",
 };
 
 export default function RootLayout({
@@ -23,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen flex flex-col antialiased`}>
+    <html lang="ar" dir="rtl" className="h-full">
+      <body className={`${cairo.variable} font-sans min-h-screen flex flex-col antialiased`}>
         {children}
       </body>
     </html>

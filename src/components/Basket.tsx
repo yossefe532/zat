@@ -1,9 +1,10 @@
 'use client';
 
-import { ArrowRight, ArrowLeft, ShoppingCart, Trash2, Tag } from 'lucide-react';
+import { ArrowRight, ArrowLeft, ShoppingCart, Trash2, Tag, ReceiptText } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
 import { DISCOUNT_RULES, ADMIN_FEES } from '@/lib/data';
+import { motion } from 'framer-motion';
 
 interface BasketProps {
   lang: 'ar' | 'en';
@@ -28,7 +29,7 @@ export function Basket({
   onBack,
   onContinue
 }: BasketProps) {
-  const isAr = lang === 'en' ? false : true;
+  const isAr = lang === 'ar';
   const coursePrice = grantData ? 650 : 3000;
   
   const applicableDiscount = DISCOUNT_RULES.find(
@@ -36,101 +37,128 @@ export function Basket({
   );
 
   return (
-    <section className="min-h-[80vh] px-4 py-16">
+    <section className="min-h-screen px-4 py-20 bg-background relative overflow-hidden">
+      {/* Legacy background effect */}
+      <div className="fixed inset-0 pointer-events-none -z-10 opacity-10 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=90')] bg-cover bg-center" />
+
       <div className="container mx-auto max-w-2xl">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-primary font-black hover:scale-105 transition-transform mb-12"
         >
-          <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-          {isAr ? 'العودة' : 'Back'}
+          <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+          {isAr ? 'العودة لاختيار الكورسات' : 'Back to Courses'}
         </button>
         
         <div className="text-center mb-12 space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
-            <ShoppingCart className="w-8 h-8 text-primary" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/5 border-4 border-primary/10 mb-4">
+            <ShoppingCart className="w-10 h-10 text-primary" />
           </div>
-          <h2 className="text-3xl font-bold">
-            {isAr ? 'سلة المشتريات' : 'Shopping Cart'}
+          <h2 className="text-4xl md:text-5xl font-black title-font text-primary">
+            {isAr ? 'سلة المشتريات الذكية' : 'Smart Shopping Cart'}
           </h2>
+          <p className="text-xl text-muted-foreground font-bold">
+            {isAr ? 'راجع طلبك واستمتع بخصومات المنحة' : 'Review your order & enjoy grant discounts'}
+          </p>
         </div>
         
-        <div className="space-y-4 mb-8">
-          {selectedCourses.map((course) => (
-            <div key={course.id} className="flex items-center justify-between p-4 rounded-xl bg-card border">
-              <div className="flex items-center gap-4">
-                <span className="text-2xl">{course.icon}</span>
+        <div className="space-y-4 mb-10">
+          {selectedCourses.map((course, index) => (
+            <motion.div 
+              key={course.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="flex items-center justify-between p-6 rounded-3xl bg-card border-2 border-border shadow-lg hover:border-primary/50 transition-all group"
+            >
+              <div className="flex items-center gap-5">
+                <span className="text-4xl group-hover:scale-110 transition-transform">{course.icon}</span>
                 <div>
-                  <p className="font-semibold">{isAr ? course.nameAr : course.nameEn}</p>
-                  <p className="text-sm text-muted-foreground">{course.level}</p>
+                  <p className="text-xl font-black title-font">{isAr ? course.nameAr : course.nameEn}</p>
+                  <p className="text-sm font-bold text-muted-foreground">{isAr ? 'دورة تدريبية معتمدة' : 'Accredited Course'}</p>
                 </div>
               </div>
               <div className="text-left">
-                <p className="font-bold text-primary">{formatPrice(coursePrice)}</p>
-                <p className="text-xs text-muted-foreground">{isAr ? 'جنيه' : 'EGP'}</p>
+                <p className="text-2xl font-black text-primary">{formatPrice(coursePrice)}</p>
+                <p className="text-xs font-black text-muted-foreground uppercase">{isAr ? 'جنيه' : 'EGP'}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
         
-        <div className="rounded-xl border bg-card p-6 space-y-4">
-          <h3 className="font-semibold text-lg">{isAr ? 'تفاصيل الأسعار' : 'Price Details'}</h3>
-          
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                {isAr ? 'سعر الكورسات' : 'Courses Price'} ({selectedCourses.length} × {formatPrice(coursePrice)})
-              </span>
-              <span>{formatPrice(calculations.subtotal)} {isAr ? 'جنيه' : 'EGP'}</span>
-            </div>
-            
-            {applicableDiscount && (
-              <div className="flex justify-between text-success">
-                <span className="flex items-center gap-1">
-                  <Tag className="w-4 h-4" />
-                  {isAr ? 'خصم الدورات المتعددة' : 'Multi-course Discount'} 
-                  ({applicableDiscount.count}+ {isAr ? 'دورات' : 'courses'})
-                </span>
-                <span>-{formatPrice(applicableDiscount.discount)} {isAr ? 'جنيه' : 'EGP'}</span>
-              </div>
-            )}
-            
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{isAr ? 'رسوم إدارية' : 'Admin Fees'}</span>
-              <span>{formatPrice(ADMIN_FEES)} {isAr ? 'جنيه' : 'EGP'}</span>
-            </div>
-            
-            <div className="border-t pt-2 mt-2">
-              <div className="flex justify-between font-bold text-lg">
-                <span>{isAr ? 'الإجمالي' : 'Total'}</span>
-                <span className="text-primary">{formatPrice(calculations.total)} {isAr ? 'جنيه' : 'EGP'}</span>
-              </div>
-            </div>
+        <div className="rounded-[2.5rem] border-2 border-border bg-card shadow-2xl overflow-hidden">
+          <div className="bg-primary/5 p-6 border-b-2 border-border flex items-center gap-3">
+            <ReceiptText className="w-6 h-6 text-primary" />
+            <h3 className="font-black text-xl title-font text-primary">{isAr ? 'تفاصيل الحساب النهائي' : 'Final Billing Details'}</h3>
           </div>
           
-          <div className="bg-muted rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium">{isAr ? 'خطة الدفع بالتقسيط' : 'Installment Plan'}</p>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {isAr ? 'القسط الأول (يُدفع الآن)' : '1st Installment (Pay Now)'}
-              </span>
-              <span className="font-semibold">{formatPrice(calculations.firstInstallment)} {isAr ? 'جنيه' : 'EGP'}</span>
+          <div className="p-8 space-y-6">
+            <div className="space-y-4 font-bold text-base">
+              <div className="flex justify-between text-muted-foreground">
+                <span>
+                  {isAr ? 'سعر الدورات' : 'Courses Price'} ({selectedCourses.length} × {formatPrice(coursePrice)})
+                </span>
+                <span className="text-foreground">{formatPrice(calculations.subtotal)} {isAr ? 'ج' : 'EGP'}</span>
+              </div>
+              
+              {applicableDiscount && (
+                <div className="flex justify-between text-success bg-success/5 p-4 rounded-2xl border border-success/20">
+                  <span className="flex items-center gap-2">
+                    <Tag className="w-5 h-5" />
+                    {isAr ? `خصم التجميع (${applicableDiscount.count}+ دورات)` : `Bundle Discount (${applicableDiscount.count}+ courses)`}
+                  </span>
+                  <span className="font-black">-{formatPrice(applicableDiscount.discount)} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+              )}
+              
+              <div className="flex justify-between text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  {isAr ? 'رسوم التسجيل الإدارية' : 'Admin Registration Fees'}
+                  <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full">{isAr ? 'تدفع لمرة واحدة' : 'One-time'}</span>
+                </span>
+                <span className="text-foreground">{formatPrice(ADMIN_FEES)} {isAr ? 'ج' : 'EGP'}</span>
+              </div>
+              
+              <div className="pt-6 border-t-2 border-dashed border-border">
+                <div className="flex justify-between items-center">
+                  <span className="text-2xl font-black title-font">{isAr ? 'الإجمالي المطلوب' : 'Total Amount'}</span>
+                  <div className="text-right">
+                    <span className="text-4xl font-black text-primary">{formatPrice(calculations.total)}</span>
+                    <span className="text-lg font-black text-primary mr-1">{isAr ? 'جنيه' : 'EGP'}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {isAr ? 'القسط الثاني (خلال أسبوعين)' : '2nd Installment (Within 2 Weeks)'}
-              </span>
-              <span className="font-semibold">{formatPrice(calculations.secondInstallment)} {isAr ? 'جنيه' : 'EGP'}</span>
+            
+            <div className="bg-muted/50 rounded-3xl p-6 space-y-4 border border-border/50">
+              <p className="text-base font-black flex items-center gap-2">
+                <div className="w-2 h-6 bg-primary rounded-full" />
+                {isAr ? 'نظام التقسيط المتاح:' : 'Available Installment Plan:'}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-2xl border border-border shadow-sm">
+                  <span className="text-xs font-bold text-muted-foreground block mb-1">
+                    {isAr ? 'القسط 1 (الآن)' : '1st Inst. (Now)'}
+                  </span>
+                  <span className="text-xl font-black text-success">{formatPrice(calculations.firstInstallment)} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+                <div className="bg-white p-4 rounded-2xl border border-border shadow-sm">
+                  <span className="text-xs font-bold text-muted-foreground block mb-1">
+                    {isAr ? 'القسط 2 (لاحقاً)' : '2nd Inst. (Later)'}
+                  </span>
+                  <span className="text-xl font-black text-primary/60">{formatPrice(calculations.secondInstallment)} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         
         <button
           onClick={onContinue}
-          className="w-full mt-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+          className="w-full mt-12 py-6 rounded-2xl bg-primary text-primary-foreground font-black text-2xl hover:bg-primary/90 transition-all shadow-2xl shadow-primary/40 flex items-center justify-center gap-3 hover:scale-[1.02]"
         >
-          {isAr ? 'متابعة التسجيل' : 'Continue Registration'}
-          <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
+          {isAr ? 'متابعة لتأكيد البيانات' : 'Continue to Confirmation'}
+          <ArrowLeft className="w-8 h-8 transition-transform group-hover:-translate-x-2 rtl:rotate-180" />
         </button>
       </div>
     </section>
