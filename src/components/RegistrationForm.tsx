@@ -92,28 +92,28 @@ export function RegistrationForm({
       <div className="container mx-auto max-w-3xl relative z-10">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-primary font-black hover:scale-105 transition-transform mb-12"
+          className="mb-10 inline-flex items-center gap-2 text-sm font-black text-primary transition-transform hover:scale-105"
         >
           <ArrowRight className="w-5 h-5 rtl:rotate-180" />
           {isAr ? 'العودة لاختيار الكورسات' : 'Back to Courses'}
         </button>
         
         <div className="text-center mb-12 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-black title-font text-primary">
+          <h2 className="section-title font-black title-font text-primary">
             {isAr ? 'استمارة التسجيل' : 'Registration Form'}
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-bold">
+          <p className="section-subtitle max-w-2xl mx-auto font-bold">
             {isAr 
               ? 'أدخل بياناتك بدقة لتأكيد حجز مكانك في المبادرة'
               : 'Enter your details accurately to confirm your spot in the initiative'}
           </p>
         </div>
         
-        <div className="bg-card rounded-3xl border-2 border-border shadow-2xl p-8 md:p-12 space-y-10">
+        <div className="hero-panel rounded-[2rem] p-6 md:p-8 space-y-8">
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <label className="text-lg font-black flex items-center gap-2 text-foreground">
+                <label className="flex items-center gap-2 text-base md:text-lg font-black text-foreground">
                   <User className="w-5 h-5 text-primary" />
                   {isAr ? 'الاسم الكامل' : 'Full Name'}
                 </label>
@@ -125,7 +125,7 @@ export function RegistrationForm({
                     if (errors.fullName) setErrors({ ...errors, fullName: '' });
                   }}
                   placeholder={isAr ? 'أدخل اسمك الكامل' : 'Enter your full name'}
-                  className={`w-full px-6 py-4 rounded-2xl border-2 bg-background font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all ${
+                  className={`field-shell w-full rounded-2xl px-5 py-3.5 font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all ${
                     errors.fullName ? 'border-destructive' : 'border-border focus:border-primary'
                   }`}
                 />
@@ -138,7 +138,7 @@ export function RegistrationForm({
               </div>
               
               <div className="space-y-3">
-                <label className="text-lg font-black flex items-center gap-2 text-foreground">
+                <label className="flex items-center gap-2 text-base md:text-lg font-black text-foreground">
                   <Phone className="w-5 h-5 text-primary" />
                   {isAr ? 'رقم الهاتف' : 'Phone Number'}
                 </label>
@@ -150,7 +150,7 @@ export function RegistrationForm({
                     if (errors.phone) setErrors({ ...errors, phone: '' });
                   }}
                   placeholder="01xxxxxxxxx"
-                  className={`w-full px-6 py-4 rounded-2xl border-2 bg-background font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all ${
+                  className={`field-shell w-full rounded-2xl px-5 py-3.5 font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all ${
                     errors.phone ? 'border-destructive' : 'border-border focus:border-primary'
                   }`}
                   dir="ltr"
@@ -165,7 +165,7 @@ export function RegistrationForm({
             </div>
             
             <div className="space-y-3">
-              <label className="text-lg font-black flex items-center gap-2 text-foreground">
+              <label className="flex items-center gap-2 text-base md:text-lg font-black text-foreground">
                 <Calendar className="w-5 h-5 text-primary" />
                 {isAr ? 'العمر' : 'Age'}
               </label>
@@ -177,7 +177,7 @@ export function RegistrationForm({
                   if (errors.age) setErrors({ ...errors, age: '' });
                 }}
                 placeholder={isAr ? 'أدخل عمرك' : 'Enter your age'}
-                className={`w-full md:w-1/3 px-6 py-4 rounded-2xl border-2 bg-background font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all ${
+                className={`field-shell w-full md:w-1/3 rounded-2xl px-5 py-3.5 font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all ${
                   errors.age ? 'border-destructive' : 'border-border focus:border-primary'
                 }`}
               />
@@ -190,8 +190,8 @@ export function RegistrationForm({
             </div>
 
             {/* Legacy Instructions Section */}
-            <div className="bg-muted/50 rounded-3xl p-8 border border-border/50">
-              <h4 className="text-xl font-black title-font text-primary mb-6 bg-primary/5 p-4 rounded-xl text-center">
+            <div className="metric-card rounded-[1.8rem] p-6 md:p-8">
+              <h4 className="mb-6 rounded-2xl bg-primary/6 p-4 text-center text-lg md:text-xl font-black title-font text-primary">
                 {isAr ? 'تعليمات مبادرة ذات الرقمية' : 'ZAT Digital Initiative Instructions'}
               </h4>
               <ul className="space-y-4">
@@ -214,9 +214,9 @@ export function RegistrationForm({
                   id="agree-check" 
                   checked={agreed}
                   onChange={(e) => setAgreed(e.target.checked)}
-                  className="w-6 h-6 rounded border-2 border-primary text-primary focus:ring-primary"
+                  className="h-5 w-5 rounded border-2 border-primary text-primary focus:ring-primary"
                 />
-                <label htmlFor="agree-check" className="text-base md:text-lg font-black text-foreground cursor-pointer">
+                <label htmlFor="agree-check" className="cursor-pointer text-sm md:text-base font-black text-foreground">
                   {isAr ? 'أوافق وأقر أني قرأت كل التعليمات الموضحة أعلاه' : 'I agree and acknowledge the above instructions'}
                 </label>
               </div>
@@ -225,11 +225,11 @@ export function RegistrationForm({
               )}
             </div>
 
-            <div className="bg-primary/5 rounded-3xl p-8 space-y-6">
-              <h4 className="text-xl font-black title-font text-primary">{isAr ? 'ملخص الدورات والرسوم' : 'Courses & Fees Summary'}</h4>
+            <div className="metric-card rounded-[1.8rem] p-6 space-y-6">
+              <h4 className="text-lg md:text-xl font-black title-font text-primary">{isAr ? 'ملخص الدورات والرسوم' : 'Courses & Fees Summary'}</h4>
               <div className="flex flex-wrap gap-3">
                 {selectedCourses.map((course) => (
-                  <span key={course.id} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-primary/20 text-primary font-black text-sm shadow-sm">
+                  <span key={course.id} className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-card/80 px-4 py-2 text-sm font-black text-primary shadow-sm backdrop-blur-sm">
                     <span>{course.icon}</span>
                     <span>{isAr ? course.nameAr : course.nameEn}</span>
                   </span>
@@ -237,17 +237,17 @@ export function RegistrationForm({
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-dashed border-primary/20">
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-border">
+                <div className="rounded-2xl border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
                   <span className="text-xs text-muted-foreground font-bold block mb-1">{isAr ? 'الإجمالي النهائي' : 'Final Total'}</span>
-                  <span className="text-2xl font-black text-primary">{formatPrice(calculations.total)} {isAr ? 'ج' : 'EGP'}</span>
+                  <span className="text-xl md:text-2xl font-black text-primary">{formatPrice(calculations.total)} {isAr ? 'ج' : 'EGP'}</span>
                 </div>
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-border">
+                <div className="rounded-2xl border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
                   <span className="text-xs text-muted-foreground font-bold block mb-1">{isAr ? 'القسط الأول' : '1st Installment'}</span>
-                  <span className="text-2xl font-black text-success">{formatPrice(calculations.firstInstallment)} {isAr ? 'ج' : 'EGP'}</span>
+                  <span className="text-xl md:text-2xl font-black text-success">{formatPrice(calculations.firstInstallment)} {isAr ? 'ج' : 'EGP'}</span>
                 </div>
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-border">
+                <div className="rounded-2xl border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
                   <span className="text-xs text-muted-foreground font-bold block mb-1">{isAr ? 'القسط الثاني' : '2nd Installment'}</span>
-                  <span className="text-2xl font-black text-primary/60">{formatPrice(calculations.secondInstallment)} {isAr ? 'ج' : 'EGP'}</span>
+                  <span className="text-xl md:text-2xl font-black text-primary/70">{formatPrice(calculations.secondInstallment)} {isAr ? 'ج' : 'EGP'}</span>
                 </div>
               </div>
             </div>
@@ -255,7 +255,7 @@ export function RegistrationForm({
             <button
               type="submit"
               disabled={loading || !agreed}
-              className="w-full inline-flex items-center justify-center gap-3 px-12 py-6 rounded-2xl bg-primary text-primary-foreground font-black text-2xl hover:bg-primary/90 transition-all shadow-2xl shadow-primary/40 disabled:opacity-30 disabled:cursor-not-allowed hover:scale-[1.02]"
+              className="action-primary inline-flex w-full items-center justify-center gap-3 rounded-[1.5rem] px-10 py-5 text-lg md:text-xl font-black disabled:cursor-not-allowed disabled:opacity-30"
             >
               {loading ? (isAr ? 'جاري التأكيد...' : 'Confirming...') : (isAr ? '🚀 تأكيد التسجيل النهائي' : '🚀 Final Registration Confirmation')}
             </button>

@@ -9,7 +9,7 @@ export function LanguageToggle({ lang, onToggle }: LanguageToggleProps) {
   return (
     <button
       onClick={() => onToggle(lang === 'ar' ? 'en' : 'ar')}
-      className="px-4 py-2 rounded-xl text-sm font-black bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-sm border border-primary/20"
+      className="action-secondary rounded-2xl px-4 py-2 text-xs font-black text-primary hover:border-primary/40 hover:bg-primary/10 md:text-sm"
     >
       {lang === 'ar' ? 'EN' : 'عربي'}
     </button>

@@ -82,54 +82,51 @@ Payment Details:
 
   return (
     <section className="min-h-screen px-4 py-20 bg-background relative overflow-hidden flex items-center justify-center">
-      {/* Legacy background effect */}
-      <div className="fixed inset-0 pointer-events-none -z-10 opacity-10 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=90')] bg-cover bg-center" />
-
       <div className="container mx-auto max-w-2xl">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-card rounded-[3rem] border-4 border-primary/20 shadow-2xl p-8 md:p-12 space-y-10 text-center relative"
+          className="hero-panel relative space-y-8 rounded-[2rem] p-6 text-center md:p-8"
         >
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full bg-success flex items-center justify-center shadow-xl shadow-success/30 border-8 border-background">
-            <ShieldCheck className="w-12 h-12 text-white" />
+          <div className="absolute -top-10 left-1/2 flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full border-[6px] border-background bg-success shadow-xl shadow-success/30">
+            <ShieldCheck className="w-10 h-10 text-white" />
           </div>
 
           <div className="space-y-6 pt-8">
-            <h1 className="text-4xl md:text-5xl font-black title-font text-success">
+            <h1 className="section-title font-black title-font text-success">
               {isAr ? 'تم التسجيل بنجاح!' : 'Success!'}
             </h1>
-            <p className="text-lg md:text-xl font-bold text-muted-foreground leading-relaxed">
+            <p className="section-subtitle font-bold">
               {isAr 
                 ? 'شكراً لتسجيلك في مبادرة ذات. يرجى إرسال الكود أدناه عبر واتساب فوراً لتأكيد مكانك قبل انتهاء الصلاحية.'
                 : 'Thank you for registering. Please send the code via WhatsApp immediately to confirm your spot.'}
             </p>
           </div>
           
-          <div className="bg-primary/5 rounded-3xl p-8 space-y-4 border-2 border-primary/10 relative group">
+          <div className="metric-card relative group rounded-[1.75rem] p-6 space-y-4">
             <p className="text-sm font-black text-primary uppercase tracking-widest">
               {isAr ? 'كود التسجيل الخاص بك' : 'Your Registration Code'}
             </p>
             <div className="flex items-center justify-center gap-4">
-              <span className="text-5xl md:text-6xl font-black font-mono text-primary tracking-tighter">
+              <span className="text-4xl md:text-5xl font-black font-mono text-primary tracking-tight">
                 {registrationData.registrationCode}
               </span>
               <button
                 onClick={copyCode}
-                className="p-3 rounded-2xl bg-white shadow-md hover:bg-primary hover:text-white transition-all group-active:scale-95"
+                className="action-secondary rounded-2xl p-3 hover:bg-primary hover:text-white group-active:scale-95"
                 title={isAr ? 'نسخ الكود' : 'Copy Code'}
               >
-                <Copy className="w-6 h-6" />
+                <Copy className="w-5 h-5" />
               </button>
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
-            <div className="space-y-4 p-6 rounded-2xl bg-muted/30 border border-border/50">
-              <h3 className="font-black text-lg title-font text-primary border-b border-dashed border-primary/20 pb-2 mb-4">
+            <div className="metric-card space-y-4 rounded-[1.6rem] p-5">
+              <h3 className="mb-4 border-b border-dashed border-primary/20 pb-2 text-base md:text-lg font-black title-font text-primary">
                 {isAr ? 'بيانات المسجل' : 'Registrant Data'}
               </h3>
-              <div className="space-y-3 font-bold text-muted-foreground">
+              <div className="space-y-3 text-sm md:text-base font-bold text-muted-foreground">
                 <p className="flex justify-between">
                   <span>{isAr ? 'الاسم:' : 'Name:'}</span>
                   <span className="text-foreground">{registrationData.fullName}</span>
@@ -145,12 +142,12 @@ Payment Details:
               </div>
             </div>
 
-            <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10">
-              <h3 className="font-black text-lg title-font text-primary border-b border-dashed border-primary/20 pb-2 mb-4">
+            <div className="metric-card space-y-4 rounded-[1.6rem] p-5">
+              <h3 className="mb-4 border-b border-dashed border-primary/20 pb-2 text-base md:text-lg font-black title-font text-primary">
                 {isAr ? 'الدفع والأقساط' : 'Payment & Installments'}
               </h3>
-              <div className="space-y-3 font-bold">
-                <div className="flex justify-between text-xl text-primary">
+              <div className="space-y-3 text-sm md:text-base font-bold">
+                <div className="flex justify-between text-lg md:text-xl text-primary">
                   <span>{isAr ? 'الإجمالي:' : 'Total:'}</span>
                   <span className="font-black">{formatPrice(calculations.total)} {isAr ? 'ج' : 'EGP'}</span>
                 </div>
@@ -166,8 +163,8 @@ Payment Details:
             </div>
           </div>
           
-          <div className="bg-destructive/10 rounded-2xl p-6 border-2 border-destructive/20 animate-pulse">
-            <p className="text-base font-black text-destructive leading-relaxed">
+          <div className="rounded-[1.5rem] border border-destructive/25 bg-destructive/10 p-5">
+            <p className="text-sm md:text-base font-black text-destructive leading-relaxed">
               ⚠️ {isAr 
                 ? `تنبيه: الكود صالح لـ 3 أيام فقط! ينتهي يوم ${expiryDay} الموافق ${expiryDateStr}`
                 : `Alert: Code valid for 3 days! Expires on ${expiryDay}, ${expiryDateStr}`}
@@ -179,25 +176,25 @@ Payment Details:
               href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-4 w-full py-6 rounded-2xl bg-[#25D366] text-white font-black text-2xl hover:bg-[#25D366]/90 transition-all shadow-xl shadow-[#25D366]/30 hover:scale-[1.02]"
+              className="inline-flex w-full items-center justify-center gap-4 rounded-[1.5rem] bg-[#25D366] py-5 text-lg md:text-xl font-black text-white shadow-xl shadow-[#25D366]/30 transition-all hover:scale-[1.02] hover:bg-[#25D366]/90"
             >
-              <MessageCircle className="w-8 h-8" />
+              <MessageCircle className="w-6 h-6" />
               {isAr ? 'تأكيد الحجز عبر واتساب' : 'Confirm via WhatsApp'}
             </a>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={onReset}
-                className="flex-1 py-4 rounded-2xl border-2 border-border bg-card text-foreground font-black text-lg hover:bg-muted/50 transition-all flex items-center justify-center gap-2"
+                className="action-secondary flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 text-base md:text-lg font-black"
               >
-                <Home className="w-6 h-6" />
+                <Home className="w-5 h-5" />
                 {isAr ? 'العودة للرئيسية' : 'Back to Home'}
               </button>
               <button
                 onClick={onReset}
-                className="flex-1 py-4 rounded-2xl border-2 border-border bg-card text-foreground font-black text-lg hover:bg-muted/50 transition-all flex items-center justify-center gap-2"
+                className="action-secondary flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 text-base md:text-lg font-black"
               >
-                <RefreshCw className="w-6 h-6" />
+                <RefreshCw className="w-5 h-5" />
                 {isAr ? 'تسجيل جديد' : 'New Registration'}
               </button>
             </div>

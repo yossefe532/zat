@@ -226,13 +226,13 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-full max-w-sm p-8 space-y-6">
+      <div className="admin-shell min-h-screen flex items-center justify-center bg-background/70 px-4">
+        <div className="hero-panel w-full max-w-sm space-y-6 rounded-[1.8rem] p-6">
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <LayoutDashboard className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-xl md:text-2xl font-bold">
               {lang === 'ar' ? 'لوحة التحكم' : 'Admin Dashboard'}
             </h1>
             <p className="text-muted-foreground text-sm">
@@ -250,14 +250,14 @@ export default function AdminPage() {
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               placeholder={lang === 'ar' ? 'كلمة المرور' : 'Password'}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="field-shell w-full rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
             
             {error && <p className="text-destructive text-sm text-center">{error}</p>}
             
             <button
               onClick={handleLogin}
-              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+              className="action-primary w-full rounded-2xl py-3 text-sm font-semibold"
             >
               {lang === 'ar' ? 'دخول' : 'Login'}
             </button>
@@ -268,12 +268,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="admin-shell min-h-screen bg-background/70">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur">
-        <div className="flex h-14 items-center justify-between px-4">
+      <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-card/70 backdrop-blur-xl">
+        <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-4">
-            <span className="font-bold text-xl">
+            <span className="font-bold text-lg md:text-xl">
               <span className="text-primary">ZAT</span>
               <span className="text-muted-foreground">Admin</span>
             </span>
@@ -281,21 +281,21 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="p-2 rounded-lg hover:bg-accent transition-colors"
+              className="action-secondary rounded-2xl p-2.5 text-primary"
             >
-              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
             <button
               onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium bg-accent"
+              className="action-secondary rounded-2xl px-3 py-2 text-xs font-black text-primary"
             >
               {lang === 'ar' ? 'EN' : 'عربي'}
             </button>
             <button
               onClick={handleLogout}
-              className="p-2 rounded-lg hover:bg-accent transition-colors text-destructive"
+              className="action-secondary rounded-2xl p-2.5 text-destructive"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -303,7 +303,7 @@ export default function AdminPage() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-3.5rem)] border-r bg-card p-4 hidden md:block">
+        <aside className="hidden min-h-[calc(100vh-4rem)] w-64 border-r border-border/70 bg-card/55 p-4 backdrop-blur-xl md:block">
           <nav className="space-y-2">
             {[
               { id: 'dashboard', icon: BarChart3, label: lang === 'ar' ? 'الإحصائيات' : 'Dashboard' },
@@ -314,10 +314,10 @@ export default function AdminPage() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id as Tab)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors ${
                   activeTab === item.id 
                     ? 'bg-primary text-primary-foreground' 
-                    : 'hover:bg-accent'
+                    : 'hover:bg-card/80'
                 }`}
               >
                 <item.icon className="w-5 h-5" />
@@ -328,7 +328,7 @@ export default function AdminPage() {
         </aside>
 
         {/* Mobile Tabs */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t border-border/70 bg-card/85 backdrop-blur-xl">
           {[
             { id: 'dashboard', icon: BarChart3, label: lang === 'ar' ? 'الإحصائيات' : 'Dashboard' },
             { id: 'registrations', icon: Users, label: lang === 'ar' ? 'التسجيلات' : 'Registrations' },
@@ -348,7 +348,7 @@ export default function AdminPage() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 pb-20 md:pb-6">
+        <main className="flex-1 p-4 pb-20 md:p-6 md:pb-6">
           {activeTab === 'dashboard' && (
             <>
               <DashboardTab stats={stats} lang={lang} />
@@ -705,22 +705,22 @@ function RegistrationsTab({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={isAr ? 'بحث بالاسم أو الهاتف أو الكود...' : 'Search by name, phone or code...'}
-          className="w-full pr-12 pl-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="field-shell w-full rounded-2xl py-3 pr-12 pl-4 focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
       </div>
       
-      <div className="rounded-xl border overflow-hidden">
+      <div className="table-shell rounded-[1.4rem]">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted">
+            <thead>
               <tr>
-                <th className="text-right py-3 px-4">{isAr ? 'الكود' : 'Code'}</th>
-                <th className="text-right py-3 px-4">{isAr ? 'الاسم' : 'Name'}</th>
-                <th className="text-right py-3 px-4">{isAr ? 'الهاتف' : 'Phone'}</th>
-                <th className="text-right py-3 px-4">{isAr ? 'الكورسات' : 'Courses'}</th>
-                <th className="text-right py-3 px-4">{isAr ? 'الإجمالي' : 'Total'}</th>
-                <th className="text-right py-3 px-4">{isAr ? 'كود المنحة' : 'Grant'}</th>
-                <th className="text-right py-3 px-4">{isAr ? 'التاريخ' : 'Date'}</th>
+                <th className="px-4 py-3 text-right text-xs font-black md:text-sm">{isAr ? 'الكود' : 'Code'}</th>
+                <th className="px-4 py-3 text-right text-xs font-black md:text-sm">{isAr ? 'الاسم' : 'Name'}</th>
+                <th className="px-4 py-3 text-right text-xs font-black md:text-sm">{isAr ? 'الهاتف' : 'Phone'}</th>
+                <th className="px-4 py-3 text-right text-xs font-black md:text-sm">{isAr ? 'الكورسات' : 'Courses'}</th>
+                <th className="px-4 py-3 text-right text-xs font-black md:text-sm">{isAr ? 'الإجمالي' : 'Total'}</th>
+                <th className="px-4 py-3 text-right text-xs font-black md:text-sm">{isAr ? 'كود المنحة' : 'Grant'}</th>
+                <th className="px-4 py-3 text-right text-xs font-black md:text-sm">{isAr ? 'التاريخ' : 'Date'}</th>
               </tr>
             </thead>
             <tbody>
@@ -732,11 +732,11 @@ function RegistrationsTab({
                 </tr>
               ) : (
                 registrations.map((reg, i) => (
-                  <tr key={reg.id || i} className="border-t hover:bg-muted/50">
-                    <td className="py-3 px-4 font-mono text-primary">{reg.registration_code}</td>
-                    <td className="py-3 px-4">{reg.full_name}</td>
-                    <td className="py-3 px-4" dir="ltr">{reg.phone}</td>
-                    <td className="py-3 px-4">
+                  <tr key={reg.id || i} className="border-t border-border/70 hover:bg-card/50">
+                    <td className="px-4 py-3 font-mono text-primary">{reg.registration_code}</td>
+                    <td className="px-4 py-3 text-foreground">{reg.full_name}</td>
+                    <td className="px-4 py-3 text-foreground" dir="ltr">{reg.phone}</td>
+                    <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {reg.courses.map(id => (
                           <span key={id} className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs">
@@ -745,8 +745,8 @@ function RegistrationsTab({
                         ))}
                       </div>
                     </td>
-                    <td className="py-3 px-4 font-semibold">{formatPrice(reg.total_price)}</td>
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3 font-semibold text-foreground">{formatPrice(reg.total_price)}</td>
+                    <td className="px-4 py-3">
                       {reg.grant_code_used ? (
                         <span className="px-2 py-0.5 rounded bg-success/10 text-success text-xs">
                           {reg.grant_code_used}
@@ -755,7 +755,7 @@ function RegistrationsTab({
                         <span className="text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-muted-foreground">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {reg.created_at ? new Date(reg.created_at).toLocaleDateString(isAr ? 'ar-EG' : 'en-US') : '-'}
                     </td>
                   </tr>
@@ -851,7 +851,7 @@ function CodesTab({
         <h1 className="text-2xl font-bold">{isAr ? 'أكواد المنح' : 'Grant Codes'}</h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          className="action-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium"
         >
           <Plus className="w-4 h-4" />
           {isAr ? 'إضافة كود' : 'Add Code'}
@@ -860,7 +860,7 @@ function CodesTab({
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {codes.map(code => (
-          <div key={code.code} className="rounded-xl border bg-card p-4 flex items-center justify-between">
+          <div key={code.code} className="glass-panel flex items-center justify-between rounded-[1.4rem] p-4">
             <div className="flex items-center gap-4">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                 code.isActive ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
@@ -875,13 +875,13 @@ function CodesTab({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setEditingCode(code)}
-                className="p-2 rounded-lg hover:bg-accent transition-colors"
+                className="action-secondary rounded-xl p-2"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(code.code)}
-                className="p-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors"
+                className="action-secondary rounded-xl p-2 text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -892,10 +892,10 @@ function CodesTab({
       
       {/* Add/Edit Modal */}
       {(showAddModal || editingCode) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
+          <div className="modal-shell space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">
+              <h2 className="text-lg md:text-xl font-bold">
                 {editingCode ? (isAr ? 'تعديل الكود' : 'Edit Code') : (isAr ? 'إضافة كود جديد' : 'Add New Code')}
               </h2>
               <button
@@ -904,7 +904,7 @@ function CodesTab({
                   setEditingCode(null);
                   setFormData({ code: '', nameAr: '', nameEn: '', whatsappNumber: '' });
                 }}
-                className="p-2 rounded-lg hover:bg-accent"
+                className="action-secondary rounded-2xl p-2"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -918,7 +918,7 @@ function CodesTab({
                   value={editingCode ? editingCode.code : formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   placeholder="e.g. CODE.EDU"
-                  className="w-full mt-1 px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono uppercase"
+                  className="field-shell mt-1 w-full rounded-2xl px-4 py-3 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/20"
                   disabled={!!editingCode}
                 />
               </div>
@@ -930,7 +930,7 @@ function CodesTab({
                   value={editingCode ? editingCode.nameAr : formData.nameAr}
                   onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                   placeholder={isAr ? 'اسم المنحة' : 'Grant Name'}
-                  className="w-full mt-1 px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="field-shell mt-1 w-full rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               
@@ -941,7 +941,7 @@ function CodesTab({
                   value={editingCode ? editingCode.nameEn : formData.nameEn}
                   onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                   placeholder={isAr ? 'Grant Name' : 'Grant Name'}
-                  className="w-full mt-1 px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="field-shell mt-1 w-full rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               
@@ -952,14 +952,14 @@ function CodesTab({
                   value={editingCode ? editingCode.whatsappNumber : formData.whatsappNumber}
                   onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
                   placeholder="201234567890"
-                  className="w-full mt-1 px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="field-shell mt-1 w-full rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   dir="ltr"
                 />
               </div>
               
               <button
                 onClick={handleSubmit}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+                className="action-primary w-full rounded-2xl py-3 text-sm font-semibold"
               >
                 {editingCode ? (isAr ? 'حفظ التعديلات' : 'Save Changes') : (isAr ? 'إضافة' : 'Add')}
               </button>

@@ -19,9 +19,6 @@ export function Hero({ lang, onStart }: HeroProps) {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-20 px-4">
-      {/* Legacy background effect */}
-      <div className="fixed inset-0 pointer-events-none -z-10 opacity-10 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=90')] bg-cover bg-center" />
-      
       <div className="container mx-auto max-w-5xl">
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
@@ -29,17 +26,17 @@ export function Hero({ lang, onStart }: HeroProps) {
           transition={{ duration: 0.8 }}
           className="text-center space-y-8"
         >
-          <div className="inline-block bg-primary/10 text-primary px-6 py-2 rounded-full font-extrabold text-sm mb-4 animate-pulse">
+          <div className="inline-block rounded-full border border-primary/15 bg-card/70 px-5 py-2 text-xs font-extrabold text-primary shadow-sm backdrop-blur-md md:text-sm">
             {isAr ? 'مبادرة ذات التعليمية 2026 🎓' : 'ZAT Educational Initiative 2026 🎓'}
           </div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-primary leading-tight">
+          <h1 className="section-title mx-auto max-w-4xl font-black text-primary">
             {isAr ? 'مستقبلك يبدأ هنا..' : 'Your Future Starts Here..'}
             <br />
             <span className="text-foreground">{isAr ? 'بخطوات واثقة' : 'With Confidence'}</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="section-subtitle mx-auto max-w-3xl font-bold">
             {isAr 
               ? 'انضم لأقوى مجتمع تعليمي في مصر، واستمتع بمزايا حصرية لا تقبل المنافسة مع أفضل الخبراء والمدربين المعتمدين.'
               : 'Join the strongest educational community in Egypt and enjoy exclusive competitive advantages with top experts and certified trainers.'}
@@ -52,27 +49,27 @@ export function Hero({ lang, onStart }: HeroProps) {
           <div className="flex flex-col sm:flex-row gap-6 justify-center pt-8">
             <button
               onClick={onStart}
-              className="group relative inline-flex items-center justify-center gap-3 px-12 py-5 rounded-xl bg-primary text-primary-foreground font-black text-xl hover:scale-105 transition-all shadow-xl shadow-primary/30"
+              className="action-primary group relative inline-flex items-center justify-center gap-3 rounded-3xl px-10 py-4 text-lg font-black"
             >
               🚀 {isAr ? 'ابدأ رحلة التعلم الآن' : 'Start Learning Now'}
-              <ArrowLeft className="w-6 h-6 transition-transform group-hover:-translate-x-2 rtl:rotate-180" />
+              <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-2 rtl:rotate-180" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto pt-12">
+          <div className="grid max-w-3xl grid-cols-1 gap-5 pt-12 mx-auto md:grid-cols-3">
             {features.map((feature, i) => (
               <motion.div 
                 key={i}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.4 + i * 0.1 }}
-                className="flex flex-col items-center gap-2 p-6 rounded-2xl bg-card border border-border/50 shadow-sm hover:border-primary transition-colors group"
+                className="glass-panel flex flex-col items-center gap-2 rounded-[1.75rem] p-5 text-center group hover:border-primary/40"
               >
-                <div className="p-3 rounded-full bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                  <feature.icon className="w-6 h-6" />
+                <div className="rounded-full bg-primary/10 p-3 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                  <feature.icon className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-bold text-muted-foreground">{feature.text}</span>
-                <span className="text-base font-black text-primary">{feature.highlight}</span>
+                <span className="text-xs font-bold text-muted-foreground md:text-sm">{feature.text}</span>
+                <span className="text-sm font-black text-primary md:text-base">{feature.highlight}</span>
               </motion.div>
             ))}
           </div>
@@ -86,16 +83,16 @@ function ComparisonSection({ lang }: { lang: 'ar' | 'en' }) {
   const isAr = lang === 'ar';
   
   return (
-    <div className="max-w-2xl mx-auto bg-card rounded-3xl border border-border shadow-2xl overflow-hidden">
+    <div className="table-shell mx-auto max-w-3xl rounded-[2rem]">
       <table className="w-full text-center border-collapse">
         <thead>
           <tr className="bg-primary text-white">
-            <th className="py-5 px-6 text-right font-black">{isAr ? 'لماذا مبادرة ZAT؟' : 'Why ZAT?'}</th>
-            <th className="py-5 px-6 font-black">{isAr ? 'مبادرة ZAT' : 'ZAT'}</th>
-            <th className="py-5 px-6 font-black text-white/70">{isAr ? 'المنافسين' : 'Others'}</th>
+            <th className="py-4 px-5 text-right text-sm font-black md:text-base">{isAr ? 'لماذا مبادرة ZAT؟' : 'Why ZAT?'}</th>
+            <th className="py-4 px-5 text-sm font-black md:text-base">{isAr ? 'مبادرة ZAT' : 'ZAT'}</th>
+            <th className="py-4 px-5 text-sm font-black text-white/85 md:text-base">{isAr ? 'المنافسين' : 'Others'}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-border/80">
           {[
             { featureAr: 'السعر التنافسي والأفضل', featureEn: 'Competitive & Best Price', zat: true, others: false },
             { featureAr: 'مستوى تعليم رفيع وعالي الجودة', featureEn: 'High-Quality Education', zat: true, others: false },
@@ -103,11 +100,11 @@ function ComparisonSection({ lang }: { lang: 'ar' | 'en' }) {
             { featureAr: 'دعم فني ومتابعة مستمرة', featureEn: 'Continuous Support', zat: true, others: false },
           ].map((row, i) => (
             <tr key={i} className="hover:bg-primary/5 transition-colors">
-              <td className="py-4 px-6 text-right font-bold text-muted-foreground bg-muted/30">
+              <td className="bg-muted/35 py-4 px-5 text-right text-sm font-black text-foreground md:text-base">
                 {isAr ? row.featureAr : row.featureEn}
               </td>
-              <td className="py-4 px-6 text-2xl font-black text-success">✔</td>
-              <td className="py-4 px-6 text-xl font-black text-destructive opacity-40">✘</td>
+              <td className="py-4 px-5 text-xl font-black text-success md:text-2xl">✔</td>
+              <td className="py-4 px-5 text-xl font-black text-destructive/80 md:text-2xl">✘</td>
             </tr>
           ))}
         </tbody>

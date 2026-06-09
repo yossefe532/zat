@@ -11,7 +11,6 @@ import { RegistrationForm } from '@/components/RegistrationForm';
 import { SuccessPage } from '@/components/SuccessPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
-import { buildWhatsappLink } from '@/lib/utils';
 import { submitRegistration, verifyGrantCodeAction } from '@/actions';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -75,10 +74,6 @@ export default function Home() {
     }
 
     const verifiedGrant = result.data;
-    const ownerMessage = lang === 'ar'
-      ? `مرحباً، تم تفعيل كود المنحة الخاص بك بنجاح.\n\nالكود المستخدم: ${verifiedGrant.code}\nاسم المنحة: ${verifiedGrant.nameAr}\nالوقت: ${new Date().toLocaleString('ar-EG')}\n\nيرجى متابعة التسجيل الجديد داخل المبادرة.`
-      : `Hello, your grant code has just been activated.\n\nUsed code: ${verifiedGrant.code}\nGrant name: ${verifiedGrant.nameEn}\nTime: ${new Date().toLocaleString('en-US')}\n\nPlease follow up on the new registration.`;
-
     setGrantData(verifiedGrant);
     setGrantCode(verifiedGrant.code);
     setStep('courses');
@@ -86,7 +81,6 @@ export default function Home() {
     return {
       success: true,
       grant: verifiedGrant,
-      notificationUrl: buildWhatsappLink(verifiedGrant.whatsappNumber, ownerMessage),
     };
   };
 
@@ -173,10 +167,10 @@ export default function Home() {
     : null);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors">
-      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2 font-bold text-xl">
+    <div className="page-shell min-h-screen flex flex-col bg-background/70 text-foreground transition-colors">
+      <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-card/70 backdrop-blur-xl supports-[backdrop-filter]:bg-card/45">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-2 text-lg font-black">
             <span className="text-primary">ZAT</span>
             <span className="text-muted-foreground">Initiative</span>
           </div>
@@ -268,8 +262,8 @@ export default function Home() {
         </AnimatePresence>
       </main>
 
-      <footer className="border-t py-6 bg-card">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+      <footer className="border-t border-border/70 bg-card/50 py-6 backdrop-blur-xl">
+        <div className="container mx-auto px-4 text-center text-xs font-bold text-muted-foreground md:text-sm">
           {lang === 'ar' ? '© 2024 مبادرة ذات - جميع الحقوق محفوظة' : '© 2024 ZAT Initiative - All Rights Reserved'}
         </div>
       </footer>

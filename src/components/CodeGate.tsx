@@ -10,7 +10,6 @@ interface CodeGateProps {
   onVerify: (code: string) => Promise<{
     success: boolean;
     error?: string;
-    notificationUrl?: string;
   }>;
   onBack: () => void;
   onSkip: () => void;
@@ -51,9 +50,6 @@ export function CodeGate({
       const result = await onVerify(code);
 
       if (result.success) {
-        if (result.notificationUrl) {
-          window.open(result.notificationUrl, '_blank', 'noopener,noreferrer');
-        }
       } else {
         setError(result.error || (isAr ? 'الكود غير صحيح أو غير مفعل' : 'Invalid or inactive code'));
       }
@@ -96,13 +92,10 @@ export function CodeGate({
 
   return (
     <section className="min-h-screen flex items-center justify-center px-4 py-20 bg-background relative overflow-hidden">
-      {/* Legacy background effect */}
-      <div className="fixed inset-0 pointer-events-none -z-10 opacity-10 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=90')] bg-cover bg-center" />
-
       <div className="w-full max-w-xl">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-primary font-black hover:scale-105 transition-transform mb-12"
+          className="inline-flex items-center gap-2 text-sm font-black text-primary hover:scale-105 transition-transform mb-10"
         >
           <ArrowRight className="w-5 h-5 rtl:rotate-180" />
           {isAr ? 'العودة للرئيسية' : 'Back to Home'}
@@ -111,16 +104,16 @@ export function CodeGate({
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-card rounded-[2.5rem] border-2 border-border shadow-2xl p-8 md:p-12 space-y-10"
+          className="hero-panel rounded-[2rem] p-6 md:p-8 space-y-8"
         >
-          <div className="text-center space-y-6">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/5 border-4 border-primary/10">
-              <Lock className="w-12 h-12 text-primary" />
+          <div className="text-center space-y-5">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border border-primary/15">
+              <Lock className="w-10 h-10 text-primary" />
             </div>
-            <h2 className="text-4xl font-black title-font text-primary">
+            <h2 className="section-title font-black title-font text-primary">
               {isAr ? 'أدخل كود المنحة الخاص بك' : 'Enter Your Grant Code'}
             </h2>
-            <p className="text-lg text-muted-foreground font-bold">
+            <p className="section-subtitle font-bold">
               {isAr 
                 ? '🔒 كود ZAT السري - أدخله هنا لتفعيل خصم المنحة فوراً'
                 : '🔒 ZAT Secret Code - Enter it here to activate your discount'}
@@ -129,7 +122,7 @@ export function CodeGate({
           
           <div className="space-y-6">
             <div className="space-y-3">
-              <label className="text-base font-black text-foreground px-2">
+              <label className="px-2 text-sm font-black text-foreground md:text-base">
                 {isAr ? 'كود المنحة' : 'Grant Code'}
               </label>
               <div className="relative">
@@ -141,15 +134,15 @@ export function CodeGate({
                     setError('');
                   }}
                   placeholder={isAr ? 'أدخل الكود الخاص بك فقط' : 'Enter your private code only'}
-                  className="w-full px-8 py-6 text-center text-3xl font-black uppercase rounded-2xl border-4 border-border bg-background focus:border-primary focus:outline-none focus:ring-8 focus:ring-primary/5 transition-all tracking-widest"
+                  className="field-shell w-full rounded-[1.5rem] px-7 py-5 text-center text-2xl font-black uppercase tracking-[0.28em] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 md:text-[2rem]"
                   dir="ltr"
                 />
                 {code && (
                   <button
                     onClick={() => setCode('')}
-                    className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                    className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
                   >
-                    <X className="w-8 h-8" />
+                    <X className="w-6 h-6" />
                   </button>
                 )}
               </div>
@@ -159,7 +152,7 @@ export function CodeGate({
               <motion.p 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-destructive text-base font-black text-center bg-destructive/10 py-3 rounded-xl border border-destructive/20"
+                className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-center text-sm font-black text-destructive md:text-base"
               >
                 {error}
               </motion.p>
@@ -168,14 +161,14 @@ export function CodeGate({
             <button
               onClick={handleVerify}
               disabled={loading}
-              className="w-full py-6 rounded-2xl bg-primary text-primary-foreground font-black text-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-3 hover:scale-[1.02]"
+              className="action-primary flex w-full items-center justify-center gap-3 rounded-[1.5rem] py-5 text-lg font-black disabled:opacity-50 md:text-xl"
             >
               {loading ? (
                 <span className="animate-pulse">{isAr ? 'جاري التحقق...' : 'Verifying...'}</span>
               ) : (
                 <>
                   {isAr ? 'تفعيل المنحة الآن' : 'Activate Grant Now'}
-                  <Check className="w-8 h-8" />
+                  <Check className="w-6 h-6" />
                 </>
               )}
             </button>
@@ -186,7 +179,7 @@ export function CodeGate({
               <div className="w-full border-t-2 border-border border-dashed" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-6 bg-card text-muted-foreground font-black text-lg">
+              <span className="px-5 bg-card/80 text-muted-foreground font-black text-sm md:text-base">
                 {isAr ? 'أو' : 'Or'}
               </span>
             </div>
@@ -195,18 +188,18 @@ export function CodeGate({
           <div className="space-y-6">
             <button
               onClick={() => setShowRequestForm((prev) => !prev)}
-              className="w-full py-5 rounded-2xl border-2 border-border bg-background text-foreground font-black text-xl hover:bg-muted/50 transition-all hover:border-primary/50"
+              className="action-secondary w-full rounded-[1.4rem] py-4 text-base font-black hover:border-primary/40 md:text-lg"
             >
               {isAr ? 'التقديم على طلب كود' : 'Apply for a Code'}
             </button>
 
             {showRequestForm && (
-              <div className="rounded-3xl border-2 border-border bg-background p-6 text-right space-y-4">
-                <h3 className="text-xl font-black text-primary title-font text-center">
+              <div className="glass-panel rounded-[1.75rem] p-5 text-right space-y-4">
+                <h3 className="text-lg font-black text-primary title-font text-center md:text-xl">
                   {isAr ? 'طلب كود جديد' : 'Request a New Code'}
                 </h3>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-black">
+                  <label className="flex items-center gap-2 text-xs font-black md:text-sm">
                     <User className="w-4 h-4 text-primary" />
                     {isAr ? 'الاسم الكامل' : 'Full Name'}
                   </label>
@@ -214,13 +207,13 @@ export function CodeGate({
                     type="text"
                     value={requestData.fullName}
                     onChange={(e) => setRequestData((prev) => ({ ...prev, fullName: e.target.value }))}
-                    className="w-full rounded-2xl border-2 border-border bg-card px-4 py-3 focus:border-primary focus:outline-none"
+                    className="field-shell w-full rounded-2xl px-4 py-3 focus:border-primary focus:outline-none"
                     placeholder={isAr ? 'اكتب اسمك الكامل' : 'Enter your full name'}
                   />
                   {requestErrors.fullName && <p className="text-sm text-destructive font-bold">{requestErrors.fullName}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-black">
+                  <label className="flex items-center gap-2 text-xs font-black md:text-sm">
                     <Phone className="w-4 h-4 text-primary" />
                     {isAr ? 'رقم الهاتف' : 'Phone Number'}
                   </label>
@@ -228,14 +221,14 @@ export function CodeGate({
                     type="tel"
                     value={requestData.phone}
                     onChange={(e) => setRequestData((prev) => ({ ...prev, phone: e.target.value }))}
-                    className="w-full rounded-2xl border-2 border-border bg-card px-4 py-3 focus:border-primary focus:outline-none"
+                    className="field-shell w-full rounded-2xl px-4 py-3 focus:border-primary focus:outline-none"
                     placeholder="01xxxxxxxxx"
                     dir="ltr"
                   />
                   {requestErrors.phone && <p className="text-sm text-destructive font-bold">{requestErrors.phone}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-black">
+                  <label className="flex items-center gap-2 text-xs font-black md:text-sm">
                     <Mail className="w-4 h-4 text-primary" />
                     {isAr ? 'البريد الإلكتروني' : 'Email'}
                   </label>
@@ -243,7 +236,7 @@ export function CodeGate({
                     type="email"
                     value={requestData.email}
                     onChange={(e) => setRequestData((prev) => ({ ...prev, email: e.target.value }))}
-                    className="w-full rounded-2xl border-2 border-border bg-card px-4 py-3 focus:border-primary focus:outline-none"
+                    className="field-shell w-full rounded-2xl px-4 py-3 focus:border-primary focus:outline-none"
                     placeholder={isAr ? 'name@example.com' : 'name@example.com'}
                     dir="ltr"
                   />
@@ -251,7 +244,7 @@ export function CodeGate({
                 </div>
                 <button
                   onClick={handleCodeRequest}
-                  className="w-full rounded-2xl bg-primary py-4 text-lg font-black text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:scale-[1.01]"
+                  className="action-primary w-full rounded-2xl py-4 text-base font-black md:text-lg"
                 >
                   {isAr ? 'إرسال طلب الانضمام' : 'Send Application Request'}
                 </button>
@@ -268,7 +261,7 @@ export function CodeGate({
               </div>
             )}
             
-            <p className="text-center text-base text-muted-foreground font-bold">
+            <p className="text-center text-sm text-muted-foreground font-bold md:text-base">
               {isAr 
                 ? 'يمكنك أيضًا متابعة التسجيل بدون كود إذا لم تكن لديك منحة حالية.'
                 : 'You can also continue without a code if you do not have an active grant.'}
@@ -276,7 +269,7 @@ export function CodeGate({
 
             <button
               onClick={onSkip}
-              className="w-full py-4 rounded-2xl border border-primary/20 bg-primary/5 text-primary font-black text-lg hover:bg-primary/10 transition-all"
+              className="action-secondary w-full rounded-2xl py-4 text-base font-black text-primary hover:border-primary/35 hover:bg-primary/10 md:text-lg"
             >
               {isAr ? 'متابعة بدون كود' : 'Continue Without a Code'}
             </button>
