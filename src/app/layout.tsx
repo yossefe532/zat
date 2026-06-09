@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 const initiativeFont = localFont({
-  src: "../../public/fonts/Abdoullah-Ashgar-EL-kharef.ttf",
+  src: "../../Abdoullah-Ashgar-EL-kharef.ttf",
   variable: "--font-initiative",
   display: "swap",
 });
