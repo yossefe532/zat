@@ -1,5 +1,6 @@
 'use server';
 
+import { DEFAULT_GRANT_CODES } from '@/lib/data';
 import { supabase } from '@/lib/supabase';
 import { createRegistrationCodeCandidate } from '@/lib/utils';
 import { RegistrationInput } from '@/lib/types';
@@ -11,6 +12,32 @@ type GrantCodeRow = {
   whatsapp_number: string;
   is_active: boolean;
 };
+
+function mapGrantCodeRow(grant: GrantCodeRow) {
+  return {
+    code: grant.code,
+    nameAr: grant.name_ar,
+    nameEn: grant.name_en,
+    whatsappNumber: grant.whatsapp_number,
+    isActive: grant.is_active,
+  };
+}
+
+function getFallbackGrantCode(code: string): GrantCodeRow | null {
+  const fallbackGrant = DEFAULT_GRANT_CODES[code as keyof typeof DEFAULT_GRANT_CODES];
+
+  if (!fallbackGrant?.isActive) {
+    return null;
+  }
+
+  return {
+    code,
+    name_ar: fallbackGrant.nameAr,
+    name_en: fallbackGrant.nameEn,
+    whatsapp_number: fallbackGrant.whatsappNumber,
+    is_active: fallbackGrant.isActive,
+  };
+}
 
 async function generateUniqueRegistrationCode(grantCodeUsed?: string) {
   for (let attempt = 0; attempt < 25; attempt += 1) {
@@ -68,33 +95,51 @@ export async function submitRegistration(data: RegistrationInput) {
 }
 
 export async function verifyGrantCodeAction(code: string) {
+  const normalizedCode = code.trim().toUpperCase();
+  const fallbackGrant = getFallbackGrantCode(normalizedCode);
+
   try {
-    const normalizedCode = code.trim().toUpperCase();
     const { data, error } = await supabase
       .from('grant_codes')
       .select('*')
       .eq('code', normalizedCode)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    const grant = data as GrantCodeRow;
+    if (data) {
+      return {
+        success: true,
+        data: mapGrantCodeRow(data as GrantCodeRow),
+      };
+    }
 
-    return {
-      success: true,
-      data: {
-        code: grant.code,
-        nameAr: grant.name_ar,
-        nameEn: grant.name_en,
-        whatsappNumber: grant.whatsapp_number,
-        isActive: grant.is_active,
-      },
-    };
+    if (fallbackGrant) {
+      return {
+        success: true,
+        data: mapGrantCodeRow(fallbackGrant),
+      };
+    }
   } catch (error) {
     console.error('Code verification error:', error);
+
+    if (fallbackGrant) {
+      return {
+        success: true,
+        data: mapGrantCodeRow(fallbackGrant),
+      };
+    }
+
     return { success: false, error };
   }
+
+  return {
+    success: false,
+    error: new Error('Grant code not found'),
+  };
 }
 
 export async function getRegistrations() {

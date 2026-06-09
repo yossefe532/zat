@@ -47,17 +47,21 @@ export function CodeGate({
     setLoading(true);
     setError('');
 
-    const result = await onVerify(code);
+    try {
+      const result = await onVerify(code);
 
-    if (result.success) {
-      if (result.notificationUrl) {
-        window.open(result.notificationUrl, '_blank', 'noopener,noreferrer');
+      if (result.success) {
+        if (result.notificationUrl) {
+          window.open(result.notificationUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        setError(result.error || (isAr ? 'الكود غير صحيح أو غير مفعل' : 'Invalid or inactive code'));
       }
-    } else {
-      setError(result.error || (isAr ? 'الكود غير صحيح أو غير مفعل' : 'Invalid or inactive code'));
+    } catch {
+      setError(isAr ? 'حدث خطأ أثناء التحقق. حاول مرة أخرى.' : 'Something went wrong while verifying. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const handleCodeRequest = () => {
