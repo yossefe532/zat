@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, ArrowLeft, ShoppingCart, Trash2, Tag, ReceiptText } from 'lucide-react';
+import { ArrowRight, ArrowLeft, ShoppingCart, Tag, ReceiptText } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
 import { DISCOUNT_RULES, ADMIN_FEES } from '@/lib/data';

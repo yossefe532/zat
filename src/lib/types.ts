@@ -6,6 +6,8 @@ export interface Course {
   level: string;
   benefitAr: string;
   benefitEn: string;
+  detailsAr?: string[];
+  detailsEn?: string[];
   originalPrice: number;
   grantPrice: number;
 }
@@ -19,8 +21,7 @@ export interface GrantCode {
   createdAt?: string;
 }
 
-export interface Registration {
-  id?: string;
+export interface RegistrationInput {
   fullName: string;
   phone: string;
   age: number;
@@ -28,8 +29,12 @@ export interface Registration {
   totalPrice: number;
   firstInstallment: number;
   secondInstallment: number;
+  grantCodeUsed?: string;
+}
+
+export interface Registration extends RegistrationInput {
+  id?: string;
   registrationCode: string;
-  grantCodeUsed: string;
   createdAt?: string;
 }
 
@@ -41,4 +46,16 @@ export interface CartItem {
 export interface DiscountRule {
   count: number;
   discount: number;
+}
+
+export interface GrantOwnerNotification {
+  whatsappUrl: string;
+  phone: string;
+  message: string;
+}
+
+export interface CodeRequestInput {
+  fullName: string;
+  phone: string;
+  email: string;
 }

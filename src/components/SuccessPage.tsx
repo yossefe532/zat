@@ -1,8 +1,8 @@
 'use client';
 
-import { Check, MessageCircle, Copy, RefreshCw, Home, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Copy, RefreshCw, Home, ShieldCheck } from 'lucide-react';
 import { Course } from '@/lib/types';
-import { formatPrice } from '@/lib/utils';
+import { buildWhatsappLink, formatPrice } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 interface SuccessPageProps {
@@ -72,8 +72,8 @@ Payment Details:
 ⚠️ Code Validity: This code is valid for 3 days only, expiring on ${expiryDay}, ${expiryDateStr}.`
   );
 
-  const whatsappLink = grantData 
-    ? `https://wa.me/${grantData.whatsappNumber.replace(/^0/, '2')}${grantData.whatsappNumber.startsWith('20') ? '' : '20'}${grantData.whatsappNumber.replace(/^20/, '')}?text=${whatsappMessage}`
+  const whatsappLink = grantData
+    ? buildWhatsappLink(grantData.whatsappNumber, decodeURIComponent(whatsappMessage))
     : `https://wa.me/?text=${whatsappMessage}`;
 
   const copyCode = () => {

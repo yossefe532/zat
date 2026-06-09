@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { ComponentType } from 'react';
 import { 
   LayoutDashboard, Users, GraduationCap, Gift, BarChart3, 
   Search, Download, Plus, Trash2, Edit2, X, Check,
-  ChevronRight, LogOut, Moon, Sun, Clock
+  LogOut, Moon, Sun, Clock
 } from 'lucide-react';
 import { COURSES, DEFAULT_GRANT_CODES } from '@/lib/data';
 import { formatPrice } from '@/lib/utils';
@@ -33,6 +34,23 @@ interface GrantCode {
   isActive: boolean;
 }
 
+interface CourseStat {
+  id: number;
+  icon: string;
+  nameAr: string;
+  nameEn: string;
+  level: string;
+  count: number;
+}
+
+interface DashboardStats {
+  totalRegistrations: number;
+  totalRevenue: number;
+  collectedAmount: number;
+  pendingAmount: number;
+  courseStats: CourseStat[];
+}
+
 const ADMIN_PASSWORD = 'zat-admin-2024';
 
 export default function AdminPage() {
@@ -40,7 +58,10 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'light';
+    return (localStorage.getItem('zat_theme') as 'light' | 'dark' | null) || 'light';
+  });
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
   
   // Data states
@@ -49,11 +70,6 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddCodeModal, setShowAddCodeModal] = useState(false);
   const [editingCode, setEditingCode] = useState<GrantCode | null>(null);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('zat_theme') as 'light' | 'dark' | null;
-    if (savedTheme) setTheme(savedTheme);
-  }, []);
 
   useEffect(() => {
     document.body.classList.toggle('dark', theme === 'dark');
@@ -87,11 +103,6 @@ export default function AdminPage() {
       setGrantCodes(defaultCodes);
       localStorage.setItem('zat_grant_codes', JSON.stringify(defaultCodes));
     }
-  };
-
-  const saveRegistrations = (data: Registration[]) => {
-    setRegistrations(data);
-    localStorage.setItem('zat_registrations', JSON.stringify(data));
   };
 
   const saveGrantCodes = (data: GrantCode[]) => {
@@ -310,7 +321,7 @@ export default function AdminPage() {
   );
 }
 
-function DashboardTab({ stats, lang }: { stats: any; lang: 'ar' | 'en' }) {
+function DashboardTab({ stats, lang }: { stats: DashboardStats; lang: 'ar' | 'en' }) {
   const isAr = lang === 'ar';
   
   return (
@@ -349,7 +360,7 @@ function DashboardTab({ stats, lang }: { stats: any; lang: 'ar' | 'en' }) {
           {isAr ? 'الكورسات الأكثر طلباً' : 'Most Popular Courses'}
         </h2>
         <div className="space-y-4">
-          {stats.courseStats.slice(0, 5).map((course: any) => (
+          {stats.courseStats.slice(0, 5).map((course: CourseStat) => (
             <div key={course.id} className="flex items-center gap-4">
               <span className="text-2xl">{course.icon}</span>
               <div className="flex-1">
@@ -370,7 +381,17 @@ function DashboardTab({ stats, lang }: { stats: any; lang: 'ar' | 'en' }) {
   );
 }
 
-function StatCard({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: any; color: string }) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+}: {
+  label: string;
+  value: string | number;
+  icon: ComponentType<{ className?: string }>;
+  color: string;
+}) {
   const colorClasses: Record<string, string> = {
     primary: 'bg-primary/10 text-primary',
     success: 'bg-success/10 text-success',
@@ -488,7 +509,7 @@ function RegistrationsTab({
   );
 }
 
-function CoursesTab({ stats, lang }: { stats: any[]; lang: 'ar' | 'en' }) {
+function CoursesTab({ stats, lang }: { stats: CourseStat[]; lang: 'ar' | 'en' }) {
   const isAr = lang === 'ar';
   
   return (

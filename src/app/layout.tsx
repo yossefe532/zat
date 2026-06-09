@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Cairo } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const cairo = Cairo({
-  variable: "--font-cairo",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "600", "700", "800", "900"],
+const initiativeFont = localFont({
+  src: "../../public/fonts/Abdoullah-Ashgar-EL-kharef.ttf",
+  variable: "--font-initiative",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="h-full">
-      <body className={`${cairo.variable} font-sans min-h-screen flex flex-col antialiased`}>
+      <body className={`${initiativeFont.variable} font-sans min-h-screen flex flex-col antialiased`}>
         {children}
       </body>
     </html>

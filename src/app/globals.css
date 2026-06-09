@@ -1,12 +1,5 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: 'CustomFont';
-  src: url('/fonts/Abdoullah-Ashgar-EL-kharef.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-
 :root {
   --background: #f7f7f7;
   --foreground: #111111;
@@ -66,8 +59,8 @@
   --color-destructive: var(--destructive);
   --color-light-bg: var(--light-bg);
   --color-text-gray: var(--text-gray);
-  --font-sans: var(--font-cairo);
-  --font-display: 'CustomFont', var(--font-cairo);
+  --font-sans: var(--font-initiative);
+  --font-display: var(--font-initiative);
 }
 
 * {
@@ -82,7 +75,7 @@ body {
   transition: background 0.6s ease, color 0.6s ease;
 }
 
-h1, h2, h3, .title-font {
+h1, h2, h3, h4, h5, h6, p, span, button, input, textarea, label, select, .title-font {
   font-family: var(--font-display) !important;
 }
 

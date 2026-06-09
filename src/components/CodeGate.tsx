@@ -1,21 +1,42 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, Gift, X, Check, Lock } from 'lucide-react';
+import { ArrowRight, Check, Lock, Mail, Phone, User, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { buildWhatsappLink } from '@/lib/utils';
 
 interface CodeGateProps {
   lang: 'ar' | 'en';
-  onVerify: (code: string) => boolean;
+  onVerify: (code: string) => Promise<{
+    success: boolean;
+    error?: string;
+    notificationUrl?: string;
+  }>;
   onBack: () => void;
   onSkip: () => void;
+  onCodeRequestCreated: (whatsappUrl: string) => void;
+  codeRequestWhatsappUrl: string | null;
 }
 
-export function CodeGate({ lang, onVerify, onBack, onSkip }: CodeGateProps) {
+export function CodeGate({
+  lang,
+  onVerify,
+  onBack,
+  onSkip,
+  onCodeRequestCreated,
+  codeRequestWhatsappUrl,
+}: CodeGateProps) {
   const isAr = lang === 'ar';
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestData, setRequestData] = useState({
+    fullName: '',
+    phone: '',
+    email: '',
+  });
+  const [requestErrors, setRequestErrors] = useState<Record<string, string>>({});
 
   const handleVerify = async () => {
     if (!code.trim()) {
@@ -25,17 +46,48 @@ export function CodeGate({ lang, onVerify, onBack, onSkip }: CodeGateProps) {
     
     setLoading(true);
     setError('');
-    
-    // Simulate verification delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    if (onVerify(code)) {
-      // Success
+
+    const result = await onVerify(code);
+
+    if (result.success) {
+      if (result.notificationUrl) {
+        window.open(result.notificationUrl, '_blank', 'noopener,noreferrer');
+      }
     } else {
-      setError(isAr ? 'الكود غير صحيح أو غير مفعل' : 'Invalid or inactive code');
+      setError(result.error || (isAr ? 'الكود غير صحيح أو غير مفعل' : 'Invalid or inactive code'));
     }
     
     setLoading(false);
+  };
+
+  const handleCodeRequest = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!requestData.fullName.trim()) {
+      newErrors.fullName = isAr ? 'أدخل الاسم الكامل' : 'Enter full name';
+    }
+
+    if (!/^01[0-9]{9}$/.test(requestData.phone.replace(/\s/g, ''))) {
+      newErrors.phone = isAr ? 'أدخل رقم هاتف صحيح' : 'Enter a valid phone number';
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestData.email.trim())) {
+      newErrors.email = isAr ? 'أدخل بريدًا إلكترونيًا صحيحًا' : 'Enter a valid email address';
+    }
+
+    setRequestErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
+    const message = isAr
+      ? `مرحباً، أريد التقديم على طلب كود لمبادرة ذات.\n\nالاسم: ${requestData.fullName}\nرقم الهاتف: ${requestData.phone}\nالبريد الإلكتروني: ${requestData.email}\n\nيرجى التواصل معي لإتمام الانضمام للمبادرة.`
+      : `Hello, I would like to apply for a ZAT grant code.\n\nName: ${requestData.fullName}\nPhone: ${requestData.phone}\nEmail: ${requestData.email}\n\nPlease contact me to complete the initiative application.`;
+
+    const whatsappUrl = buildWhatsappLink('201029398592', message);
+    onCodeRequestCreated(whatsappUrl);
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -84,7 +136,7 @@ export function CodeGate({ lang, onVerify, onBack, onSkip }: CodeGateProps) {
                     setCode(e.target.value.toUpperCase());
                     setError('');
                   }}
-                  placeholder={isAr ? 'أدخل الكود هنا (مثلاً: Y.EDU)' : 'Enter code here (e.g., Y.EDU)'}
+                  placeholder={isAr ? 'أدخل الكود الخاص بك فقط' : 'Enter your private code only'}
                   className="w-full px-8 py-6 text-center text-3xl font-black uppercase rounded-2xl border-4 border-border bg-background focus:border-primary focus:outline-none focus:ring-8 focus:ring-primary/5 transition-all tracking-widest"
                   dir="ltr"
                 />
@@ -138,17 +190,92 @@ export function CodeGate({ lang, onVerify, onBack, onSkip }: CodeGateProps) {
           
           <div className="space-y-6">
             <button
-              onClick={onSkip}
+              onClick={() => setShowRequestForm((prev) => !prev)}
               className="w-full py-5 rounded-2xl border-2 border-border bg-background text-foreground font-black text-xl hover:bg-muted/50 transition-all hover:border-primary/50"
             >
-              {isAr ? 'ليس لدي كود منحة' : "I don't have a code"}
+              {isAr ? 'التقديم على طلب كود' : 'Apply for a Code'}
             </button>
+
+            {showRequestForm && (
+              <div className="rounded-3xl border-2 border-border bg-background p-6 text-right space-y-4">
+                <h3 className="text-xl font-black text-primary title-font text-center">
+                  {isAr ? 'طلب كود جديد' : 'Request a New Code'}
+                </h3>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-black">
+                    <User className="w-4 h-4 text-primary" />
+                    {isAr ? 'الاسم الكامل' : 'Full Name'}
+                  </label>
+                  <input
+                    type="text"
+                    value={requestData.fullName}
+                    onChange={(e) => setRequestData((prev) => ({ ...prev, fullName: e.target.value }))}
+                    className="w-full rounded-2xl border-2 border-border bg-card px-4 py-3 focus:border-primary focus:outline-none"
+                    placeholder={isAr ? 'اكتب اسمك الكامل' : 'Enter your full name'}
+                  />
+                  {requestErrors.fullName && <p className="text-sm text-destructive font-bold">{requestErrors.fullName}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-black">
+                    <Phone className="w-4 h-4 text-primary" />
+                    {isAr ? 'رقم الهاتف' : 'Phone Number'}
+                  </label>
+                  <input
+                    type="tel"
+                    value={requestData.phone}
+                    onChange={(e) => setRequestData((prev) => ({ ...prev, phone: e.target.value }))}
+                    className="w-full rounded-2xl border-2 border-border bg-card px-4 py-3 focus:border-primary focus:outline-none"
+                    placeholder="01xxxxxxxxx"
+                    dir="ltr"
+                  />
+                  {requestErrors.phone && <p className="text-sm text-destructive font-bold">{requestErrors.phone}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-black">
+                    <Mail className="w-4 h-4 text-primary" />
+                    {isAr ? 'البريد الإلكتروني' : 'Email'}
+                  </label>
+                  <input
+                    type="email"
+                    value={requestData.email}
+                    onChange={(e) => setRequestData((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full rounded-2xl border-2 border-border bg-card px-4 py-3 focus:border-primary focus:outline-none"
+                    placeholder={isAr ? 'name@example.com' : 'name@example.com'}
+                    dir="ltr"
+                  />
+                  {requestErrors.email && <p className="text-sm text-destructive font-bold">{requestErrors.email}</p>}
+                </div>
+                <button
+                  onClick={handleCodeRequest}
+                  className="w-full rounded-2xl bg-primary py-4 text-lg font-black text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:scale-[1.01]"
+                >
+                  {isAr ? 'إرسال طلب الانضمام' : 'Send Application Request'}
+                </button>
+                {codeRequestWhatsappUrl && (
+                  <a
+                    href={codeRequestWhatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center text-sm font-black text-primary underline"
+                  >
+                    {isAr ? 'فتح رسالة الطلب مرة أخرى' : 'Open the request message again'}
+                  </a>
+                )}
+              </div>
+            )}
             
             <p className="text-center text-base text-muted-foreground font-bold">
               {isAr 
-                ? '💡 يمكنك الاستمرار والتسجيل بالسعر الأصلي (3000 ج)'
-                : '💡 You can continue and register at the original price (3000 EGP)'}
+                ? 'يمكنك أيضًا متابعة التسجيل بدون كود إذا لم تكن لديك منحة حالية.'
+                : 'You can also continue without a code if you do not have an active grant.'}
             </p>
+
+            <button
+              onClick={onSkip}
+              className="w-full py-4 rounded-2xl border border-primary/20 bg-primary/5 text-primary font-black text-lg hover:bg-primary/10 transition-all"
+            >
+              {isAr ? 'متابعة بدون كود' : 'Continue Without a Code'}
+            </button>
           </div>
         </motion.div>
       </div>

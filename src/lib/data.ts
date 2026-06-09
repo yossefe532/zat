@@ -7,6 +7,8 @@ export const COURSES = [
     level: 'A1-A2',
     benefitAr: 'تطوير مهارات التحدث والكتابة بشكل احترافي',
     benefitEn: 'Professional development of speaking and writing skills',
+    detailsAr: ['إجمالي 32 ساعة دراسية', 'مناسب للمبتدئين', 'تطبيقات عملية ومتابعة مستمرة'],
+    detailsEn: ['32 study hours total', 'Suitable for beginners', 'Practical exercises and continuous follow-up'],
     originalPrice: 3000,
     grantPrice: 650
   },
@@ -18,6 +20,8 @@ export const COURSES = [
     level: 'A1.1',
     benefitAr: 'تعلم اللغة الألمانية من الصفر حتى المحادثة اليومية',
     benefitEn: 'Learn German from scratch to daily conversation',
+    detailsAr: ['إجمالي 20 ساعة دراسية', 'أساسيات المحادثة اليومية', 'دعم خاص للكادر الطبي والطلاب'],
+    detailsEn: ['20 study hours total', 'Daily conversation basics', 'Extra support for students and medical staff'],
     originalPrice: 3000,
     grantPrice: 650
   },
@@ -29,6 +33,8 @@ export const COURSES = [
     level: 'شهادة دولية',
     benefitAr: 'إتقان مهارات الحاسب الآلي والبرامج المكتبية الأساسية',
     benefitEn: 'Mastering computer skills and essential office programs',
+    detailsAr: ['شرح عملي شامل', 'تجهيز لسوق العمل', 'إمكانية حجز الاختبارات المعتمدة'],
+    detailsEn: ['Hands-on training', 'Prepared for the job market', 'Accredited exams can be booked'],
     originalPrice: 3000,
     grantPrice: 650
   },
@@ -40,6 +46,8 @@ export const COURSES = [
     level: 'من الصفر',
     benefitAr: 'تحريك الرسوم وتصميم الفيديو والمونتاج الاحترافي',
     benefitEn: 'Animation, video design, and professional editing',
+    detailsAr: ['مشاريع تطبيقية واقعية', 'تعلم المونتاج والتحريك', 'مناسب للمبتدئين'],
+    detailsEn: ['Real applied projects', 'Editing and motion training', 'Suitable for beginners'],
     originalPrice: 3000,
     grantPrice: 650
   },
@@ -51,6 +59,8 @@ export const COURSES = [
     level: 'احترافي',
     benefitAr: 'احتراف برامج التصميم العالمية وتصميم الهويات البصرية',
     benefitEn: 'Mastering international design software and visual identity design',
+    detailsAr: ['أساسيات وتطبيقات عملية', 'تصميم هويات وسوشيال ميديا', 'تدريب على مشاريع حقيقية'],
+    detailsEn: ['Foundations and practical tasks', 'Branding and social media design', 'Training on real projects'],
     originalPrice: 3000,
     grantPrice: 650
   },
@@ -62,6 +72,8 @@ export const COURSES = [
     level: 'تطوير ويب',
     benefitAr: 'بناء وتطوير المواقع الإلكترونية من البداية بشكل عملي',
     benefitEn: 'Practical building and development of websites from scratch',
+    detailsAr: ['شرح HTML و CSS بشكل تطبيقي', 'إنشاء مشاريع حقيقية', 'مناسب لبداية المسار المهني'],
+    detailsEn: ['Practical HTML and CSS', 'Build real projects', 'Great start for a tech career'],
     originalPrice: 3000,
     grantPrice: 650
   }

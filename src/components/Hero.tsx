@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Sparkles, Trophy, Clock, Users } from 'lucide-react';
+import { ArrowLeft, Trophy, Clock, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface HeroProps {

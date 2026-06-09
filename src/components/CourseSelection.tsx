@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, ArrowLeft, Check, GraduationCap } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, ShoppingCart, Tag } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { motion } from 'framer-motion';
 
@@ -12,6 +12,13 @@ interface CourseSelectionProps {
   onBack: () => void;
   onContinue: () => void;
   grantData: { nameAr: string; nameEn: string } | null;
+  calculations: {
+    subtotal: number;
+    discount: number;
+    total: number;
+    firstInstallment: number;
+    secondInstallment: number;
+  };
 }
 
 export function CourseSelection({
@@ -21,7 +28,8 @@ export function CourseSelection({
   onToggle,
   onBack,
   onContinue,
-  grantData
+  grantData,
+  calculations,
 }: CourseSelectionProps) {
   const isAr = lang === 'ar';
   const price = grantData ? 650 : 3000;
@@ -57,7 +65,8 @@ export function CourseSelection({
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {courses.map((course, index) => {
             const isSelected = selectedCourses.find(c => c.id === course.id);
             const details = isAr ? course.detailsAr : course.detailsEn;
@@ -127,6 +136,78 @@ export function CourseSelection({
               </motion.div>
             );
           })}
+          </div>
+
+          <div className="xl:sticky xl:top-24">
+            <div className="rounded-[2rem] border-2 border-border bg-card p-6 shadow-2xl space-y-6">
+              <div className="flex items-center gap-3 text-primary">
+                <ShoppingCart className="w-6 h-6" />
+                <h3 className="text-2xl font-black title-font">
+                  {isAr ? 'سلة الكورسات' : 'Courses Cart'}
+                </h3>
+              </div>
+
+              {selectedCourses.length === 0 ? (
+                <div className="rounded-2xl bg-muted/40 p-5 text-center text-muted-foreground font-black">
+                  {isAr ? 'ابدأ باختيار كورس ليظهر داخل السلة تلقائيًا.' : 'Select a course and it will appear here automatically.'}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {selectedCourses.map((course) => (
+                    <div key={course.id} className="flex items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{course.icon}</span>
+                        <div>
+                          <p className="font-black text-foreground">{isAr ? course.nameAr : course.nameEn}</p>
+                          <p className="text-xs font-bold text-muted-foreground">
+                            {displayPrice} {isAr ? 'ج' : 'EGP'}
+                          </p>
+                        </div>
+                      </div>
+                      <Check className="w-5 h-5 text-success" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-3 rounded-2xl bg-primary/5 p-5">
+                <div className="flex justify-between text-sm font-black text-muted-foreground">
+                  <span>{isAr ? 'الإجمالي قبل الخصم' : 'Subtotal before discount'}</span>
+                  <span>{calculations.subtotal} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+                <div className="flex justify-between text-sm font-black text-success">
+                  <span className="inline-flex items-center gap-2">
+                    <Tag className="w-4 h-4" />
+                    {isAr ? 'قيمة الخصم' : 'Discount'}
+                  </span>
+                  <span>- {calculations.discount} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+                <div className="border-t border-dashed border-primary/20 pt-3 flex justify-between text-lg font-black">
+                  <span>{isAr ? 'السعر النهائي' : 'Final total'}</span>
+                  <span className="text-primary">{calculations.total} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="rounded-2xl border border-border bg-card px-4 py-3">
+                    <p className="text-xs font-black text-muted-foreground">{isAr ? 'القسط الأول' : '1st installment'}</p>
+                    <p className="text-lg font-black text-success">{calculations.firstInstallment} {isAr ? 'ج' : 'EGP'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-card px-4 py-3">
+                    <p className="text-xs font-black text-muted-foreground">{isAr ? 'القسط الثاني' : '2nd installment'}</p>
+                    <p className="text-lg font-black text-primary">{calculations.secondInstallment} {isAr ? 'ج' : 'EGP'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={onContinue}
+                disabled={selectedCourses.length === 0}
+                className="w-full inline-flex items-center justify-center gap-3 rounded-2xl bg-primary px-8 py-4 text-lg font-black text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isAr ? 'متابعة إلى السلة الكاملة' : 'Continue to full basket'}
+                <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
+              </button>
+            </div>
+          </div>
         </div>
         
         <div className="mt-20 flex flex-col md:flex-row items-center justify-between gap-8 p-8 rounded-3xl bg-card border border-border shadow-xl">

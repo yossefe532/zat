@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, User, Phone, Calendar, AlertCircle, Check } from 'lucide-react';
+import { ArrowRight, User, Phone, Calendar, AlertCircle } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
 
@@ -18,14 +18,12 @@ interface RegistrationFormProps {
     secondInstallment: number;
   };
   onBack: () => void;
-  onSubmit: (data: { fullName: string; phone: string; age: number }) => void;
+  onSubmit: (data: { fullName: string; phone: string; age: number }) => Promise<void>;
 }
 
 export function RegistrationForm({
   lang,
   selectedCourses,
-  grantCode,
-  grantData,
   calculations,
   onBack,
   onSubmit
@@ -39,6 +37,7 @@ export function RegistrationForm({
   const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -75,12 +74,16 @@ export function RegistrationForm({
     if (!validate()) return;
     
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    onSubmit({
-      fullName: formData.fullName,
-      phone: formData.phone,
-      age: parseInt(formData.age)
-    });
+    setSubmitError('');
+    try {
+      await onSubmit({
+        fullName: formData.fullName,
+        phone: formData.phone,
+        age: parseInt(formData.age)
+      });
+    } catch {
+      setSubmitError(isAr ? 'حدث خطأ أثناء حفظ التسجيل، حاول مرة أخرى.' : 'Something went wrong while saving your registration.');
+    }
     setLoading(false);
   };
 
@@ -256,6 +259,11 @@ export function RegistrationForm({
             >
               {loading ? (isAr ? 'جاري التأكيد...' : 'Confirming...') : (isAr ? '🚀 تأكيد التسجيل النهائي' : '🚀 Final Registration Confirmation')}
             </button>
+            {submitError && (
+              <p className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-center text-sm font-black text-destructive">
+                {submitError}
+              </p>
+            )}
           </form>
         </div>
       </div>
