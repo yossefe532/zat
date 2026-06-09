@@ -31,6 +31,8 @@ export async function POST(request: Request) {
 
   const token = process.env.WHATSAPP_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const defaultTemplateName = process.env.WHATSAPP_TEMPLATE_NAME;
+  const defaultTemplateLanguage = process.env.WHATSAPP_TEMPLATE_LANG || 'ar';
   if (!token || !phoneNumberId) {
     return NextResponse.json({ success: false }, { status: 500 });
   }
@@ -41,17 +43,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false }, { status: 400 });
   }
 
+  const templateName = body.template?.name || defaultTemplateName;
+  const templateLanguage = body.template?.language || defaultTemplateLanguage;
+
   const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
 
-  const payload = body.template
+  const payload = body.template || templateName
     ? {
         messaging_product: 'whatsapp',
         to,
         type: 'template',
         template: {
-          name: body.template.name,
-          language: { code: body.template.language || 'ar' },
-          components: body.template.bodyParams?.length
+          name: templateName,
+          language: { code: templateLanguage },
+          components: body.template?.bodyParams?.length
             ? [
                 {
                   type: 'body',
@@ -73,7 +78,7 @@ export async function POST(request: Request) {
         },
       };
 
-  if (!body.template && !body.message) {
+  if (!templateName && !body.message) {
     return NextResponse.json({ success: false }, { status: 400 });
   }
 

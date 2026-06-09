@@ -69,7 +69,11 @@ export default function AdminPage() {
   const [showAddCodeModal, setShowAddCodeModal] = useState(false);
   const [editingCode, setEditingCode] = useState<GrantCode | null>(null);
   const [sendPhone, setSendPhone] = useState('');
+  const [sendMode, setSendMode] = useState<'template' | 'text'>('template');
   const [sendMessage, setSendMessage] = useState('');
+  const [templateName, setTemplateName] = useState('first_contact');
+  const [templateLang, setTemplateLang] = useState('ar');
+  const [templateParams, setTemplateParams] = useState(['', '', '']);
   const [sendStatus, setSendStatus] = useState<{ ok: boolean; text: string } | null>(null);
 
   function loadData() {
@@ -132,26 +136,46 @@ export default function AdminPage() {
 
   const handleSendWhatsapp = async () => {
     setSendStatus(null);
+    const body =
+      sendMode === 'template'
+        ? {
+            to: sendPhone,
+            template: {
+              name: templateName,
+              language: templateLang,
+              bodyParams: templateParams.filter(Boolean),
+            },
+          }
+        : {
+            to: sendPhone,
+            message: sendMessage,
+          };
+
     const res = await fetch('/api/whatsapp/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: sendPhone,
-        message: sendMessage,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
       setSendStatus({
         ok: false,
-        text: lang === 'ar' ? 'فشل إرسال الرسالة. قد تحتاج قالب رسالة (Template) أو الرقم غير صحيح.' : 'Failed to send. You may need a template or the number is invalid.',
+        text: lang === 'ar'
+          ? 'فشل إرسال الرسالة. تأكد من اسم القالب، لغة القالب، واعتماد القالب داخل Meta.'
+          : 'Failed to send. Please check the template name, language, and approval status in Meta.',
       });
       return;
     }
 
-    setSendStatus({ ok: true, text: lang === 'ar' ? 'تم إرسال الرسالة بنجاح.' : 'Message sent successfully.' });
+    setSendStatus({
+      ok: true,
+      text: sendMode === 'template'
+        ? (lang === 'ar' ? 'تم إرسال القالب بنجاح من الرقم الموحد.' : 'Template sent successfully from the unified number.')
+        : (lang === 'ar' ? 'تم إرسال الرسالة بنجاح.' : 'Message sent successfully.'),
+    });
     setSendPhone('');
     setSendMessage('');
+    setTemplateParams(['', '', '']);
   };
 
   const saveGrantCodes = (data: GrantCode[]) => {
@@ -331,10 +355,20 @@ export default function AdminPage() {
               <AdminWhatsappSender
                 lang={lang}
                 phone={sendPhone}
+                mode={sendMode}
                 message={sendMessage}
+                templateName={templateName}
+                templateLang={templateLang}
+                templateParams={templateParams}
                 status={sendStatus}
                 onPhoneChange={setSendPhone}
+                onModeChange={setSendMode}
                 onMessageChange={setSendMessage}
+                onTemplateNameChange={setTemplateName}
+                onTemplateLangChange={setTemplateLang}
+                onTemplateParamChange={(index, value) => {
+                  setTemplateParams((prev) => prev.map((item, i) => (i === index ? value : item)));
+                }}
                 onSend={handleSendWhatsapp}
               />
             </>
@@ -444,18 +478,34 @@ function DashboardTab({ stats, lang }: { stats: DashboardStats; lang: 'ar' | 'en
 function AdminWhatsappSender({
   lang,
   phone,
+  mode,
   message,
+  templateName,
+  templateLang,
+  templateParams,
   status,
   onPhoneChange,
+  onModeChange,
   onMessageChange,
+  onTemplateNameChange,
+  onTemplateLangChange,
+  onTemplateParamChange,
   onSend,
 }: {
   lang: 'ar' | 'en';
   phone: string;
+  mode: 'template' | 'text';
   message: string;
+  templateName: string;
+  templateLang: string;
+  templateParams: string[];
   status: { ok: boolean; text: string } | null;
   onPhoneChange: (value: string) => void;
+  onModeChange: (value: 'template' | 'text') => void;
   onMessageChange: (value: string) => void;
+  onTemplateNameChange: (value: string) => void;
+  onTemplateLangChange: (value: string) => void;
+  onTemplateParamChange: (index: number, value: string) => void;
   onSend: () => void;
 }) {
   const isAr = lang === 'ar';
@@ -477,6 +527,25 @@ function AdminWhatsappSender({
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => onModeChange('template')}
+          className={`px-4 py-2 rounded-xl border text-sm font-bold transition-colors ${
+            mode === 'template' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border'
+          }`}
+        >
+          {isAr ? 'قالب أول رسالة' : 'First-contact template'}
+        </button>
+        <button
+          onClick={() => onModeChange('text')}
+          className={`px-4 py-2 rounded-xl border text-sm font-bold transition-colors ${
+            mode === 'text' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border'
+          }`}
+        >
+          {isAr ? 'رسالة عادية' : 'Free text'}
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">{isAr ? 'رقم الهاتف' : 'Phone number'}</label>
@@ -488,16 +557,65 @@ function AdminWhatsappSender({
             className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">{isAr ? 'نص الرسالة' : 'Message'}</label>
-          <input
-            value={message}
-            onChange={(e) => onMessageChange(e.target.value)}
-            placeholder={isAr ? 'اكتب الرسالة التي تريد إرسالها' : 'Write the message you want to send'}
-            className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
+        {mode === 'template' ? (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{isAr ? 'اسم القالب' : 'Template name'}</label>
+            <input
+              value={templateName}
+              onChange={(e) => onTemplateNameChange(e.target.value)}
+              placeholder={isAr ? 'مثال: first_contact' : 'Example: first_contact'}
+              className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{isAr ? 'نص الرسالة' : 'Message'}</label>
+            <input
+              value={message}
+              onChange={(e) => onMessageChange(e.target.value)}
+              placeholder={isAr ? 'اكتب الرسالة التي تريد إرسالها' : 'Write the message you want to send'}
+              className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        )}
       </div>
+
+      {mode === 'template' && (
+        <div className="rounded-2xl border border-border p-4 space-y-4 bg-muted/20">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{isAr ? 'لغة القالب' : 'Template language'}</label>
+              <input
+                value={templateLang}
+                onChange={(e) => onTemplateLangChange(e.target.value)}
+                placeholder="ar"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground flex items-end">
+              {isAr
+                ? 'استخدم هنا اسم القالب المعتمد داخل Meta، وأدخل المتغيرات بنفس ترتيب القالب.'
+                : 'Use the approved Meta template name and fill variables in the exact template order.'}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {templateParams.map((param, index) => (
+              <div key={index} className="space-y-2">
+                <label className="text-sm font-medium">
+                  {isAr ? `متغير ${index + 1}` : `Param ${index + 1}`}
+                </label>
+                <input
+                  value={param}
+                  onChange={(e) => onTemplateParamChange(index, e.target.value)}
+                  placeholder={isAr ? `قيمة المتغير ${index + 1}` : `Value ${index + 1}`}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {status && (
         <div
@@ -511,11 +629,13 @@ function AdminWhatsappSender({
 
       <button
         onClick={onSend}
-        disabled={!phone.trim() || !message.trim()}
+        disabled={!phone.trim() || (mode === 'template' ? !templateName.trim() : !message.trim())}
         className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
       >
         <Send className="w-4 h-4" />
-        {isAr ? 'إرسال' : 'Send'}
+        {mode === 'template'
+          ? (isAr ? 'إرسال القالب' : 'Send template')
+          : (isAr ? 'إرسال الرسالة' : 'Send message')}
       </button>
     </div>
   );
