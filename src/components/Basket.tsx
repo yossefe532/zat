@@ -3,7 +3,7 @@
 import { ArrowRight, ArrowLeft, ShoppingCart, Tag, ReceiptText } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
-import { DISCOUNT_RULES, ADMIN_FEES } from '@/lib/data';
+import { DISCOUNT_RULES } from '@/lib/data';
 import { motion } from 'framer-motion';
 
 interface BasketProps {
@@ -30,7 +30,9 @@ export function Basket({
   onContinue
 }: BasketProps) {
   const isAr = lang === 'ar';
-  const coursePrice = grantData ? 650 : 3000;
+  const displayedCoursePrice = selectedCourses.length === 0
+    ? 0
+    : (grantData ? selectedCourses[0].grantPrice : selectedCourses[0].originalPrice);
   
   const applicableDiscount = DISCOUNT_RULES.find(
     rule => selectedCourses.length >= rule.count
@@ -79,7 +81,7 @@ export function Basket({
                 </div>
               </div>
               <div className="text-left">
-                <p className="text-2xl font-black text-primary">{formatPrice(coursePrice)}</p>
+                <p className="text-2xl font-black text-primary">{formatPrice(grantData ? course.grantPrice : course.originalPrice)}</p>
                 <p className="text-xs font-black text-muted-foreground uppercase">{isAr ? 'جنيه' : 'EGP'}</p>
               </div>
             </motion.div>
@@ -96,7 +98,7 @@ export function Basket({
             <div className="space-y-4 font-bold text-base">
               <div className="flex justify-between text-muted-foreground">
                 <span>
-                  {isAr ? 'سعر الدورات' : 'Courses Price'} ({selectedCourses.length} × {formatPrice(coursePrice)})
+                  {isAr ? 'سعر الدورات' : 'Courses Price'} ({selectedCourses.length} × {formatPrice(displayedCoursePrice)})
                 </span>
                 <span className="text-foreground">{formatPrice(calculations.subtotal)} {isAr ? 'ج' : 'EGP'}</span>
               </div>
@@ -110,14 +112,6 @@ export function Basket({
                   <span className="font-black">-{formatPrice(applicableDiscount.discount)} {isAr ? 'ج' : 'EGP'}</span>
                 </div>
               )}
-              
-              <div className="flex justify-between text-muted-foreground">
-                <span className="flex items-center gap-2">
-                  {isAr ? 'رسوم التسجيل الإدارية' : 'Admin Registration Fees'}
-                  <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full">{isAr ? 'تدفع لمرة واحدة' : 'One-time'}</span>
-                </span>
-                <span className="text-foreground">{formatPrice(ADMIN_FEES)} {isAr ? 'ج' : 'EGP'}</span>
-              </div>
               
               <div className="pt-6 border-t-2 border-dashed border-border">
                 <div className="flex justify-between items-center">

@@ -196,9 +196,9 @@ export function RegistrationForm({
               </h4>
               <ul className="space-y-4">
                 {[
-                  isAr ? 'السعر لمنحة كاملة 650 جنيه فقط في حال وجود كود خصم.' : 'Full grant price is 650 EGP only with discount code.',
-                  isAr ? 'سعر ملئ الأبليكيشن 25 جنيه فقط لا غير.' : 'Application fee is 25 EGP only.',
-                  isAr ? 'القسط الأول 200 جنيه + 25 جنيه رسوم، والقسط الثاني 450 جنيه.' : '1st Installment: 200 + 25 fees. 2nd Installment: 450 EGP.',
+                  isAr ? 'سعر المنحة لكل كورس: 675 جنيه فقط في حال وجود كود خصم.' : 'Grant price per course is 675 EGP only with discount code.',
+                  isAr ? 'لا توجد رسوم إضافية على سعر المنحة.' : 'No extra fees are added to the grant price.',
+                  isAr ? 'نظام التقسيط: القسط الأول 200 جنيه لكل كورس، والقسط الثاني 475 جنيه لكل كورس.' : 'Installments: 1st is 200 EGP per course, 2nd is 475 EGP per course.',
                   isAr ? 'يستلم المتدرب شهادة حضور لكل تدريب بعلامة مائية هولوجرام.' : 'Students receive hologram certificates for each training.',
                   isAr ? 'يفصل الطالب من المنحة في حال تجاوز غياب 3 محاضرات بدون عذر.' : 'Dismissal occurs after 3 unexcused absences.',
                 ].map((instruction, i) => (

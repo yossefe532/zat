@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { COURSES, DEFAULT_GRANT_CODES, DISCOUNT_RULES, ADMIN_FEES } from '@/lib/data';
+import { COURSES, DEFAULT_GRANT_CODES, DISCOUNT_RULES } from '@/lib/data';
 import { Course, GrantCode, RegistrationInput } from '@/lib/types';
 import { Hero } from '@/components/Hero';
 import { CodeGate } from '@/components/CodeGate';
@@ -56,7 +56,16 @@ export default function Home() {
 
   const verifyGrantCode = async (code: string) => {
     const normalizedCode = code.trim().toUpperCase();
-    const result = await verifyGrantCodeAction(normalizedCode);
+    let result: Awaited<ReturnType<typeof verifyGrantCodeAction>>;
+
+    try {
+      result = await verifyGrantCodeAction(normalizedCode);
+    } catch {
+      return {
+        success: false,
+        error: lang === 'ar' ? 'حدث خطأ أثناء التحقق. حاول مرة أخرى.' : 'Something went wrong while verifying. Please try again.',
+      };
+    }
 
     if (!result.success || !result.data) {
       return {
@@ -84,7 +93,7 @@ export default function Home() {
   const calculateTotal = () => {
     const subtotal = selectedCourses.reduce((sum, course) => {
       if (grantData) {
-        return sum + course.grantPrice + ADMIN_FEES;
+        return sum + course.grantPrice;
       }
 
       return sum + course.originalPrice;
@@ -101,7 +110,7 @@ export default function Home() {
     const total = Math.max(subtotal - discount, 0);
     const firstInstallment = selectedCourses.length === 0
       ? 0
-      : Math.min(total, selectedCourses.length * (200 + (grantData ? ADMIN_FEES : 0)));
+      : Math.min(total, selectedCourses.length * 200);
     const secondInstallment = total - firstInstallment;
     
     return { subtotal, discount, total, firstInstallment, secondInstallment };

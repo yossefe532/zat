@@ -10,7 +10,7 @@ export const COURSES = [
     detailsAr: ['إجمالي 32 ساعة دراسية', 'مناسب للمبتدئين', 'تطبيقات عملية ومتابعة مستمرة'],
     detailsEn: ['32 study hours total', 'Suitable for beginners', 'Practical exercises and continuous follow-up'],
     originalPrice: 3000,
-    grantPrice: 650
+    grantPrice: 675
   },
   { 
     id: 2, 
@@ -23,7 +23,7 @@ export const COURSES = [
     detailsAr: ['إجمالي 20 ساعة دراسية', 'أساسيات المحادثة اليومية', 'دعم خاص للكادر الطبي والطلاب'],
     detailsEn: ['20 study hours total', 'Daily conversation basics', 'Extra support for students and medical staff'],
     originalPrice: 3000,
-    grantPrice: 650
+    grantPrice: 675
   },
   { 
     id: 3, 
@@ -36,7 +36,7 @@ export const COURSES = [
     detailsAr: ['شرح عملي شامل', 'تجهيز لسوق العمل', 'إمكانية حجز الاختبارات المعتمدة'],
     detailsEn: ['Hands-on training', 'Prepared for the job market', 'Accredited exams can be booked'],
     originalPrice: 3000,
-    grantPrice: 650
+    grantPrice: 675
   },
   { 
     id: 4, 
@@ -49,7 +49,7 @@ export const COURSES = [
     detailsAr: ['مشاريع تطبيقية واقعية', 'تعلم المونتاج والتحريك', 'مناسب للمبتدئين'],
     detailsEn: ['Real applied projects', 'Editing and motion training', 'Suitable for beginners'],
     originalPrice: 3000,
-    grantPrice: 650
+    grantPrice: 675
   },
   { 
     id: 5, 
@@ -62,7 +62,7 @@ export const COURSES = [
     detailsAr: ['أساسيات وتطبيقات عملية', 'تصميم هويات وسوشيال ميديا', 'تدريب على مشاريع حقيقية'],
     detailsEn: ['Foundations and practical tasks', 'Branding and social media design', 'Training on real projects'],
     originalPrice: 3000,
-    grantPrice: 650
+    grantPrice: 675
   },
   { 
     id: 6, 
@@ -75,7 +75,7 @@ export const COURSES = [
     detailsAr: ['شرح HTML و CSS بشكل تطبيقي', 'إنشاء مشاريع حقيقية', 'مناسب لبداية المسار المهني'],
     detailsEn: ['Practical HTML and CSS', 'Build real projects', 'Great start for a tech career'],
     originalPrice: 3000,
-    grantPrice: 650
+    grantPrice: 675
   }
 ];
 
@@ -112,7 +112,7 @@ export const DEFAULT_GRANT_CODES = {
   }
 };
 
-export const ADMIN_FEES = 25;
+export const ADMIN_FEES = 0;
 
 export const DISCOUNT_RULES = [
   { count: 3, discount: 50 },

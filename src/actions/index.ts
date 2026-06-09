@@ -1,7 +1,7 @@
 'use server';
 
 import { DEFAULT_GRANT_CODES } from '@/lib/data';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase';
 import { createRegistrationCodeCandidate } from '@/lib/utils';
 import { RegistrationInput } from '@/lib/types';
 
@@ -40,6 +40,11 @@ function getFallbackGrantCode(code: string): GrantCodeRow | null {
 }
 
 async function generateUniqueRegistrationCode(grantCodeUsed?: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error('Supabase is not configured');
+  }
+
   for (let attempt = 0; attempt < 25; attempt += 1) {
     const candidate = createRegistrationCodeCandidate(grantCodeUsed);
     const { data, error } = await supabase
@@ -62,6 +67,11 @@ async function generateUniqueRegistrationCode(grantCodeUsed?: string) {
 
 export async function submitRegistration(data: RegistrationInput) {
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error('Supabase is not configured');
+    }
+
     const registrationCode = await generateUniqueRegistrationCode(data.grantCodeUsed);
     const { data: result, error } = await supabase
       .from('registrations')
@@ -90,13 +100,31 @@ export async function submitRegistration(data: RegistrationInput) {
     };
   } catch (error) {
     console.error('Registration error:', error);
-    return { success: false, error };
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'Registration failed',
+    };
   }
 }
 
 export async function verifyGrantCodeAction(code: string) {
   const normalizedCode = code.trim().toUpperCase();
   const fallbackGrant = getFallbackGrantCode(normalizedCode);
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    if (fallbackGrant) {
+      return {
+        success: true,
+        data: mapGrantCodeRow(fallbackGrant),
+      };
+    }
+
+    return {
+      success: false,
+      errorMessage: 'Supabase is not configured',
+    };
+  }
 
   try {
     const { data, error } = await supabase
@@ -133,17 +161,25 @@ export async function verifyGrantCodeAction(code: string) {
       };
     }
 
-    return { success: false, error };
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'Code verification failed',
+    };
   }
 
   return {
     success: false,
-    error: new Error('Grant code not found'),
+    errorMessage: 'Grant code not found',
   };
 }
 
 export async function getRegistrations() {
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error('Supabase is not configured');
+    }
+
     const { data, error } = await supabase
       .from('registrations')
       .select('*')
@@ -153,12 +189,20 @@ export async function getRegistrations() {
     return { success: true, data };
   } catch (error) {
     console.error('Fetch registrations error:', error);
-    return { success: false, error };
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'Fetch registrations failed',
+    };
   }
 }
 
 export async function getGrantCodes() {
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error('Supabase is not configured');
+    }
+
     const { data, error } = await supabase
       .from('grant_codes')
       .select('*')
@@ -168,12 +212,20 @@ export async function getGrantCodes() {
     return { success: true, data };
   } catch (error) {
     console.error('Fetch grant codes error:', error);
-    return { success: false, error };
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'Fetch grant codes failed',
+    };
   }
 }
 
 export async function addGrantCode(code: { code: string; name_ar: string; name_en: string; whatsapp_number: string }) {
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error('Supabase is not configured');
+    }
+
     const { data, error } = await supabase
       .from('grant_codes')
       .insert([{ ...code, is_active: true }])
@@ -184,12 +236,20 @@ export async function addGrantCode(code: { code: string; name_ar: string; name_e
     return { success: true, data };
   } catch (error) {
     console.error('Add grant code error:', error);
-    return { success: false, error };
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'Add grant code failed',
+    };
   }
 }
 
 export async function updateGrantCode(code: string, updates: { is_active?: boolean; name_ar?: string; name_en?: string; whatsapp_number?: string }) {
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error('Supabase is not configured');
+    }
+
     const { data, error } = await supabase
       .from('grant_codes')
       .update(updates)
@@ -201,12 +261,20 @@ export async function updateGrantCode(code: string, updates: { is_active?: boole
     return { success: true, data };
   } catch (error) {
     console.error('Update grant code error:', error);
-    return { success: false, error };
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'Update grant code failed',
+    };
   }
 }
 
 export async function deleteGrantCode(code: string) {
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error('Supabase is not configured');
+    }
+
     const { error } = await supabase
       .from('grant_codes')
       .delete()
@@ -216,6 +284,9 @@ export async function deleteGrantCode(code: string) {
     return { success: true };
   } catch (error) {
     console.error('Delete grant code error:', error);
-    return { success: false, error };
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'Delete grant code failed',
+    };
   }
 }

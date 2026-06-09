@@ -32,9 +32,6 @@ export function CourseSelection({
   calculations,
 }: CourseSelectionProps) {
   const isAr = lang === 'ar';
-  const price = grantData ? 650 : 3000;
-  const adminFees = grantData ? 25 : 0;
-  const displayPrice = price + adminFees;
 
   return (
     <section className="min-h-screen px-4 py-20 bg-background relative overflow-hidden">
@@ -70,6 +67,7 @@ export function CourseSelection({
           {courses.map((course, index) => {
             const isSelected = selectedCourses.find(c => c.id === course.id);
             const details = isAr ? course.detailsAr : course.detailsEn;
+            const displayPrice = grantData ? course.grantPrice : course.originalPrice;
 
             return (
               <motion.div
@@ -126,11 +124,6 @@ export function CourseSelection({
                       <span className="text-3xl font-black text-primary">{displayPrice}</span>
                       <span className="text-base font-black text-primary">{isAr ? 'ج' : 'EGP'}</span>
                     </div>
-                    {grantData && (
-                      <div className="text-[10px] text-muted-foreground mt-1">
-                        {isAr ? `(شاملة ${adminFees} ج رسوم تسجيل)` : `(Includes ${adminFees} EGP admin fees)`}
-                      </div>
-                    )}
                   </div>
                 </div>
               </motion.div>
@@ -160,7 +153,7 @@ export function CourseSelection({
                         <div>
                           <p className="font-black text-foreground">{isAr ? course.nameAr : course.nameEn}</p>
                           <p className="text-xs font-bold text-muted-foreground">
-                            {displayPrice} {isAr ? 'ج' : 'EGP'}
+                            {(grantData ? course.grantPrice : course.originalPrice)} {isAr ? 'ج' : 'EGP'}
                           </p>
                         </div>
                       </div>
@@ -220,7 +213,7 @@ export function CourseSelection({
               <p className="text-base font-bold text-muted-foreground">
                 {isAr ? 'إجمالي السعر' : 'Total Price'}: 
                 <span className="text-foreground font-black text-xl mx-2">
-                  {selectedCourses.length * displayPrice} {isAr ? 'جنيه' : 'EGP'}
+                  {calculations.total} {isAr ? 'جنيه' : 'EGP'}
                 </span>
               </p>
             )}
