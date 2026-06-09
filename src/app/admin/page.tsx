@@ -5,7 +5,7 @@ import type { ComponentType } from 'react';
 import { 
   LayoutDashboard, Users, GraduationCap, Gift, BarChart3, 
   Search, Download, Plus, Trash2, Edit2, X, Check,
-  LogOut, Moon, Sun, Clock
+  LogOut, Moon, Sun, Clock, Send
 } from 'lucide-react';
 import { COURSES, DEFAULT_GRANT_CODES } from '@/lib/data';
 import { formatPrice } from '@/lib/utils';
@@ -51,8 +51,6 @@ interface DashboardStats {
   courseStats: CourseStat[];
 }
 
-const ADMIN_PASSWORD = 'zat-admin-2024';
-
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -70,39 +68,90 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddCodeModal, setShowAddCodeModal] = useState(false);
   const [editingCode, setEditingCode] = useState<GrantCode | null>(null);
+  const [sendPhone, setSendPhone] = useState('');
+  const [sendMessage, setSendMessage] = useState('');
+  const [sendStatus, setSendStatus] = useState<{ ok: boolean; text: string } | null>(null);
+
+  function loadData() {
+    const savedRegs = localStorage.getItem('zat_registrations');
+    const savedCodes = localStorage.getItem('zat_grant_codes');
+
+    setRegistrations(savedRegs ? JSON.parse(savedRegs) : []);
+
+    if (savedCodes) {
+      setGrantCodes(JSON.parse(savedCodes));
+      return;
+    }
+
+    const defaultCodes: GrantCode[] = Object.entries(DEFAULT_GRANT_CODES).map(([code, data]) => ({
+      code,
+      ...data
+    }));
+    setGrantCodes(defaultCodes);
+    localStorage.setItem('zat_grant_codes', JSON.stringify(defaultCodes));
+  }
 
   useEffect(() => {
     document.body.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('zat_theme', theme);
   }, [theme]);
 
-  const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      loadData();
-    } else {
+  useEffect(() => {
+    void (async () => {
+      const res = await fetch('/api/admin/me', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = (await res.json().catch(() => ({}))) as { authenticated?: boolean };
+      if (data.authenticated) {
+        setIsAuthenticated(true);
+        loadData();
+      }
+    })();
+  }, []);
+
+  const handleLogin = async () => {
+    setError('');
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+
+    if (!res.ok) {
       setError(lang === 'ar' ? 'كلمة المرور غير صحيحة' : 'Incorrect password');
+      return;
     }
+
+    setIsAuthenticated(true);
+    loadData();
   };
 
-  const loadData = () => {
-    // Load from localStorage for demo
-    const savedRegs = localStorage.getItem('zat_registrations');
-    const savedCodes = localStorage.getItem('zat_grant_codes');
-    
-    setRegistrations(savedRegs ? JSON.parse(savedRegs) : []);
-    
-    if (savedCodes) {
-      setGrantCodes(JSON.parse(savedCodes));
-    } else {
-      // Initialize with default codes
-      const defaultCodes: GrantCode[] = Object.entries(DEFAULT_GRANT_CODES).map(([code, data]) => ({
-        code,
-        ...data
-      }));
-      setGrantCodes(defaultCodes);
-      localStorage.setItem('zat_grant_codes', JSON.stringify(defaultCodes));
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    setIsAuthenticated(false);
+  };
+
+  const handleSendWhatsapp = async () => {
+    setSendStatus(null);
+    const res = await fetch('/api/whatsapp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: sendPhone,
+        message: sendMessage,
+      }),
+    });
+
+    if (!res.ok) {
+      setSendStatus({
+        ok: false,
+        text: lang === 'ar' ? 'فشل إرسال الرسالة. قد تحتاج قالب رسالة (Template) أو الرقم غير صحيح.' : 'Failed to send. You may need a template or the number is invalid.',
+      });
+      return;
     }
+
+    setSendStatus({ ok: true, text: lang === 'ar' ? 'تم إرسال الرسالة بنجاح.' : 'Message sent successfully.' });
+    setSendPhone('');
+    setSendMessage('');
   };
 
   const saveGrantCodes = (data: GrantCode[]) => {
@@ -219,7 +268,7 @@ export default function AdminPage() {
               {lang === 'ar' ? 'EN' : 'عربي'}
             </button>
             <button
-              onClick={() => setIsAuthenticated(false)}
+              onClick={handleLogout}
               className="p-2 rounded-lg hover:bg-accent transition-colors text-destructive"
             >
               <LogOut className="w-5 h-5" />
@@ -277,7 +326,18 @@ export default function AdminPage() {
         {/* Main Content */}
         <main className="flex-1 p-6 pb-20 md:pb-6">
           {activeTab === 'dashboard' && (
-            <DashboardTab stats={stats} lang={lang} />
+            <>
+              <DashboardTab stats={stats} lang={lang} />
+              <AdminWhatsappSender
+                lang={lang}
+                phone={sendPhone}
+                message={sendMessage}
+                status={sendStatus}
+                onPhoneChange={setSendPhone}
+                onMessageChange={setSendMessage}
+                onSend={handleSendWhatsapp}
+              />
+            </>
           )}
           
           {activeTab === 'registrations' && (
@@ -377,6 +437,86 @@ function DashboardTab({ stats, lang }: { stats: DashboardStats; lang: 'ar' | 'en
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function AdminWhatsappSender({
+  lang,
+  phone,
+  message,
+  status,
+  onPhoneChange,
+  onMessageChange,
+  onSend,
+}: {
+  lang: 'ar' | 'en';
+  phone: string;
+  message: string;
+  status: { ok: boolean; text: string } | null;
+  onPhoneChange: (value: string) => void;
+  onMessageChange: (value: string) => void;
+  onSend: () => void;
+}) {
+  const isAr = lang === 'ar';
+
+  return (
+    <div className="mt-8 rounded-2xl border bg-card p-6 space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold">{isAr ? 'إرسال واتساب من الرقم الموحد' : 'Send WhatsApp from unified number'}</h2>
+          <p className="text-sm text-muted-foreground">
+            {isAr
+              ? 'هذه الرسالة تُرسل عبر WhatsApp Cloud API من رقم واحد لكل الموظفين.'
+              : 'This message is sent via WhatsApp Cloud API from a single unified number.'}
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 text-primary font-bold">
+          <Send className="w-4 h-4" />
+          {isAr ? 'Cloud API' : 'Cloud API'}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">{isAr ? 'رقم الهاتف' : 'Phone number'}</label>
+          <input
+            value={phone}
+            onChange={(e) => onPhoneChange(e.target.value)}
+            placeholder="01xxxxxxxxx"
+            dir="ltr"
+            className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">{isAr ? 'نص الرسالة' : 'Message'}</label>
+          <input
+            value={message}
+            onChange={(e) => onMessageChange(e.target.value)}
+            placeholder={isAr ? 'اكتب الرسالة التي تريد إرسالها' : 'Write the message you want to send'}
+            className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+      </div>
+
+      {status && (
+        <div
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            status.ok ? 'border-success/20 bg-success/10 text-success' : 'border-destructive/20 bg-destructive/10 text-destructive'
+          }`}
+        >
+          {status.text}
+        </div>
+      )}
+
+      <button
+        onClick={onSend}
+        disabled={!phone.trim() || !message.trim()}
+        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+      >
+        <Send className="w-4 h-4" />
+        {isAr ? 'إرسال' : 'Send'}
+      </button>
     </div>
   );
 }
