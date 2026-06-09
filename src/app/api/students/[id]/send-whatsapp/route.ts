@@ -4,7 +4,7 @@ import { errorResponse } from '@/lib/http';
 import { getStudentForMessaging, markStudentWhatsappSent } from '@/lib/portal';
 import {
   buildRegistrationWhatsappMessage,
-  normalizeWhatsappTarget,
+  sendWhatsappTextMessage,
 } from '@/lib/whatsapp';
 
 export async function POST(
@@ -16,40 +16,9 @@ export async function POST(
     const { id } = await context.params;
     const student = await getStudentForMessaging(id, actor);
 
-    const token = process.env.WHATSAPP_TOKEN;
-    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-    if (!token || !phoneNumberId) {
-      throw new Error('مفاتيح واتساب غير مهيأة في البيئة');
-    }
-
     const message = buildRegistrationWhatsappMessage(student);
-    const response = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: normalizeWhatsappTarget(student.phone),
-        type: 'text',
-        text: {
-          body: message,
-        },
-      }),
-    });
-
-    const data = (await response.json().catch(() => ({}))) as {
-      messages?: Array<{ id?: string }>;
-      error?: { message?: string };
-    };
-
-    if (!response.ok) {
-      throw new Error(data.error?.message ?? 'فشل إرسال رسالة الواتساب');
-    }
-
-    const deliveryId = data.messages?.[0]?.id ?? null;
+    const data = await sendWhatsappTextMessage(student.phone, message);
+    const deliveryId = data.data?.messageId ?? data.data?.id ?? data.data?.key?.id ?? null;
     const updatedStudent = await markStudentWhatsappSent(id, actor, deliveryId);
 
     return NextResponse.json({

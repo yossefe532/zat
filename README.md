@@ -19,13 +19,19 @@ SUPABASE_SERVICE_ROLE_KEY=
 ADMIN_PASSWORD=
 AUTH_SECRET=
 DATA_ENCRYPTION_KEY=
+WASENDER_API_KEY=
+WASENDER_API_BASE_URL=https://www.wasenderapi.com/api
 WHATSAPP_TOKEN=
-WHATSAPP_PHONE_NUMBER_ID=
 CRON_SECRET=
 SITE_ACCESS_PASSWORD=
 ```
 
 `SITE_ACCESS_PASSWORD` هي كلمة المرور العامة التي تحمي جميع الصفحات مثل `/` و`/staff` و`/admin`.
+
+تكامل الواتساب الحالي يعمل مع `WasenderAPI`:
+
+- ضع `WASENDER_API_KEY` أو `WHATSAPP_TOKEN` بنفس قيمة `API Access Token` من جلسة Wasender.
+- اترك `WASENDER_API_BASE_URL` على القيمة الافتراضية إلا إذا كنت تستخدم عنوانًا مخصصًا.
 
 ## التشغيل
 
