@@ -1,1 +1,8 @@
-{"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}
+{
+  "crons": [
+    {
+      "path": "/api/system/backup",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
