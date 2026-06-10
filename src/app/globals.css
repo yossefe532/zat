@@ -147,6 +147,18 @@ h1, h2, h3, h4, h5, h6, .title-font {
   font-family: var(--font-display) !important;
 }
 
+html[lang="ar"] h1,
+html[lang="ar"] h2,
+html[lang="ar"] h3,
+html[lang="ar"] h4,
+html[lang="ar"] h5,
+html[lang="ar"] h6,
+html[lang="ar"] .title-font,
+html[lang="ar"] .action-primary {
+  font-family: var(--font-display) !important;
+  letter-spacing: 0;
+}
+
 ::selection {
   background: color-mix(in srgb, var(--primary) 20%, transparent);
   color: var(--foreground);
@@ -203,8 +215,8 @@ select:focus-visible {
 
 .section-title {
   font-size: clamp(1.75rem, 2.8vw, 3rem);
-  line-height: 1.12;
-  letter-spacing: -0.02em;
+  line-height: 1.24;
+  letter-spacing: 0;
 }
 
 .section-subtitle {
@@ -220,6 +232,7 @@ select:focus-visible {
   border-radius: 1.15rem;
   padding: 0.9rem 1.15rem;
   font-size: 0.98rem;
+  line-height: 1.25;
 }
 
 .action-primary:hover {
