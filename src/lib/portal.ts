@@ -59,6 +59,21 @@ type StudentRow = {
   created_at: string;
 };
 
+type RegistrationRow = {
+  id: string;
+  full_name: string;
+  phone: string;
+  age: number | null;
+  courses: number[] | null;
+  total_price: number | string;
+  first_installment: number | string | null;
+  second_installment: number | string | null;
+  registration_code: string;
+  grant_code_used: string | null;
+  whatsapp_sent: boolean | null;
+  created_at: string | null;
+};
+
 type AuditLogRow = {
   id: string;
   actor_role: string;
@@ -131,6 +146,21 @@ export type StudentSummary = {
   createdAt: string;
 };
 
+export type RegistrationSummary = {
+  id: string;
+  fullName: string;
+  phone: string;
+  age: number | null;
+  courseIds: number[];
+  totalPrice: number;
+  firstInstallment: number;
+  secondInstallment: number;
+  registrationCode: string;
+  grantCodeUsed: string | null;
+  whatsappSent: boolean;
+  createdAt: string | null;
+};
+
 export type AuditLogSummary = {
   id: string;
   actorRole: string;
@@ -153,9 +183,11 @@ export type BackupSummary = {
 export type AdminOverview = {
   employees: EmployeeSummary[];
   students: StudentSummary[];
+  registrations: RegistrationSummary[];
   auditLogs: AuditLogSummary[];
   backups: BackupSummary[];
   stats: {
+    registrationCount: number;
     studentCount: number;
     employeeCount: number;
     whatsappCount: number;
@@ -380,6 +412,25 @@ function mapStudent(row: StudentRow): StudentSummary {
     employeeNumber: row.employee_number,
     whatsappSentAt: row.whatsapp_sent_at,
     whatsappDeliveryId: row.whatsapp_delivery_id,
+    createdAt: row.created_at,
+  };
+}
+
+function mapRegistration(row: RegistrationRow): RegistrationSummary {
+  return {
+    id: row.id,
+    fullName: row.full_name,
+    phone: row.phone,
+    age: row.age,
+    courseIds: Array.isArray(row.courses)
+      ? row.courses.map((value) => Number(value)).filter((value) => Number.isFinite(value))
+      : [],
+    totalPrice: Number(row.total_price ?? 0),
+    firstInstallment: Number(row.first_installment ?? 0),
+    secondInstallment: Number(row.second_installment ?? 0),
+    registrationCode: row.registration_code,
+    grantCodeUsed: row.grant_code_used,
+    whatsappSent: Boolean(row.whatsapp_sent),
     createdAt: row.created_at,
   };
 }
@@ -733,6 +784,20 @@ export async function listStudents(actor: SessionActor) {
   return ((data ?? []) as StudentRow[]).map(mapStudent);
 }
 
+export async function listRegistrations() {
+  const supabase = requireServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from('registrations')
+    .select('id, full_name, phone, age, courses, total_price, first_installment, second_installment, registration_code, grant_code_used, whatsapp_sent, created_at')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as RegistrationRow[]).map(mapRegistration);
+}
+
 export async function createStudentRecord(
   input: {
     fullName: string;
@@ -1038,9 +1103,10 @@ export async function createBackupSnapshot(actor: SessionActor | { role: 'system
 }
 
 export async function getAdminOverview(): Promise<AdminOverview> {
-  const [employees, students, auditLogs, backups] = await Promise.all([
+  const [employees, students, registrations, auditLogs, backups] = await Promise.all([
     listEmployees(),
     listStudents({ role: 'admin', subjectId: 'admin' }),
+    listRegistrations(),
     listAuditLogs(),
     listBackups(),
   ]);
@@ -1048,9 +1114,11 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   return {
     employees,
     students,
+    registrations,
     auditLogs,
     backups,
     stats: {
+      registrationCount: registrations.length,
       studentCount: students.length,
       employeeCount: employees.length,
       whatsappCount: students.filter((student) => Boolean(student.whatsappSentAt)).length,

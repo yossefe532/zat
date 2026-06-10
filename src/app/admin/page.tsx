@@ -1,15 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { BookOpenCheck, DatabaseBackup, LogOut, MessageCircleMore, Users, WalletCards } from 'lucide-react';
-import { AdminStudentManagementPanel } from '@/components/console/AdminStudentManagementPanel';
-import { AuditPanels } from '@/components/console/AuditPanels';
-import { CourseManagementPanel } from '@/components/console/CourseManagementPanel';
-import { EmployeeManagementPanel } from '@/components/console/EmployeeManagementPanel';
 import { LoginPanel } from '@/components/console/LoginPanel';
 import { MetricCard } from '@/components/console/MetricCard';
 import { StatusBadge } from '@/components/console/StatusBadge';
 import type { AdminOverview, CourseCatalogItem, StudentSummary } from '@/lib/portal';
+
+const DeferredPanelFallback = ({ label }: { label: string }) => (
+  <section className="hero-panel rounded-[2rem] p-6">
+    <p className="text-sm font-black text-muted-foreground">جارٍ تحميل قسم {label}...</p>
+  </section>
+);
+
+const EmployeeManagementPanel = dynamic(
+  () => import('@/components/console/EmployeeManagementPanel').then((module) => module.EmployeeManagementPanel),
+  { loading: () => <DeferredPanelFallback label="الموظفين" /> },
+);
+const AdminStudentManagementPanel = dynamic(
+  () => import('@/components/console/AdminStudentManagementPanel').then((module) => module.AdminStudentManagementPanel),
+  { loading: () => <DeferredPanelFallback label="الطلاب" /> },
+);
+const AdminRegistrationsPanel = dynamic(
+  () => import('@/components/console/AdminRegistrationsPanel').then((module) => module.AdminRegistrationsPanel),
+  { loading: () => <DeferredPanelFallback label="طلبات التسجيل" /> },
+);
+const CourseManagementPanel = dynamic(
+  () => import('@/components/console/CourseManagementPanel').then((module) => module.CourseManagementPanel),
+  { loading: () => <DeferredPanelFallback label="الكورسات" /> },
+);
+const AuditPanels = dynamic(
+  () => import('@/components/console/AuditPanels').then((module) => module.AuditPanels),
+  { loading: () => <DeferredPanelFallback label="السجلات والنسخ الاحتياطية" /> },
+);
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => ({}))) as T & { message?: string };
@@ -24,15 +48,22 @@ async function parseResponse<T>(response: Response): Promise<T> {
 const emptyOverview: AdminOverview = {
   employees: [],
   students: [],
+  registrations: [],
   auditLogs: [],
   backups: [],
   stats: {
+    registrationCount: 0,
     studentCount: 0,
     employeeCount: 0,
     whatsappCount: 0,
     activeCodes: 0,
     totalRevenue: 0,
   },
+};
+
+const deferredSectionStyle: CSSProperties = {
+  contentVisibility: 'auto',
+  containIntrinsicSize: '960px',
 };
 
 export default function AdminPage() {
@@ -438,50 +469,66 @@ export default function AdminPage() {
           {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <MetricCard title="الطلاب" value={`${overview.stats.studentCount}`} hint="إجمالي السجلات المحفوظة" icon={BookOpenCheck} />
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          <MetricCard title="طلبات التسجيل" value={`${overview.stats.registrationCount}`} hint="القادمة من الموقع الرئيسي" icon={BookOpenCheck} />
+          <MetricCard title="الطلاب" value={`${overview.stats.studentCount}`} hint="سجلات الكونسول المحفوظة" icon={BookOpenCheck} />
           <MetricCard title="الموظفون" value={`${overview.stats.employeeCount}`} hint="عدد الحسابات العاملة" icon={Users} />
           <MetricCard title="الرسائل" value={`${overview.stats.whatsappCount}`} hint="تم إرسالها للطلاب" icon={MessageCircleMore} />
           <MetricCard title="الأكواد" value={`${overview.stats.activeCodes}`} hint="الأكواد السارية حاليًا" icon={DatabaseBackup} />
           <MetricCard title="الإيراد" value={`${overview.stats.totalRevenue.toLocaleString('ar-EG')} ج`} hint="إجمالي المبالغ المستحقة" icon={WalletCards} />
         </section>
 
-        <EmployeeManagementPanel
-          employees={overview.employees}
-          auditLogs={overview.auditLogs}
-          students={overview.students}
-          latestCredentials={latestCredentials}
-          onCreate={(payload) => void handleCreateEmployee(payload)}
-          onToggleStatus={(employeeId, isActive) => void handleToggleEmployee(employeeId, isActive)}
-          onUpdate={(employeeId, payload) => void handleUpdateEmployee(employeeId, payload)}
-          onDelete={(employeeId) => void handleDeleteEmployee(employeeId)}
-          busyEmployeeId={busyEmployeeId}
-        />
+        <section style={deferredSectionStyle}>
+          <EmployeeManagementPanel
+            employees={overview.employees}
+            auditLogs={overview.auditLogs}
+            students={overview.students}
+            latestCredentials={latestCredentials}
+            onCreate={(payload) => void handleCreateEmployee(payload)}
+            onToggleStatus={(employeeId, isActive) => void handleToggleEmployee(employeeId, isActive)}
+            onUpdate={(employeeId, payload) => void handleUpdateEmployee(employeeId, payload)}
+            onDelete={(employeeId) => void handleDeleteEmployee(employeeId)}
+            busyEmployeeId={busyEmployeeId}
+          />
+        </section>
 
-        <AdminStudentManagementPanel
-          records={overview.students}
-          courses={courses}
-          busyStudentId={busyStudentId}
-          onSave={(studentId, payload) => void handleUpdateStudent(studentId, payload)}
-          onDelete={(studentId) => void handleDeleteStudent(studentId)}
-          onSendWhatsapp={(studentId) => void handleSendWhatsapp(studentId)}
-        />
+        <section style={deferredSectionStyle}>
+          <AdminRegistrationsPanel
+            records={overview.registrations}
+            courses={courses}
+          />
+        </section>
 
-        <CourseManagementPanel
-          courses={courses}
-          creating={creatingCourse}
-          busyCourseId={busyCourseId}
-          onCreate={(payload) => void handleCreateCourse(payload)}
-          onUpdate={(courseId, payload) => void handleUpdateCourse(courseId, payload)}
-          onDelete={(courseId) => void handleDeleteCourse(courseId)}
-        />
+        <section style={deferredSectionStyle}>
+          <AdminStudentManagementPanel
+            records={overview.students}
+            courses={courses}
+            busyStudentId={busyStudentId}
+            onSave={(studentId, payload) => void handleUpdateStudent(studentId, payload)}
+            onDelete={(studentId) => void handleDeleteStudent(studentId)}
+            onSendWhatsapp={(studentId) => void handleSendWhatsapp(studentId)}
+          />
+        </section>
 
-        <AuditPanels
-          auditLogs={overview.auditLogs}
-          backups={overview.backups}
-          onRunBackup={() => void handleRunBackup()}
-          backupBusy={backupBusy}
-        />
+        <section style={deferredSectionStyle}>
+          <CourseManagementPanel
+            courses={courses}
+            creating={creatingCourse}
+            busyCourseId={busyCourseId}
+            onCreate={(payload) => void handleCreateCourse(payload)}
+            onUpdate={(courseId, payload) => void handleUpdateCourse(courseId, payload)}
+            onDelete={(courseId) => void handleDeleteCourse(courseId)}
+          />
+        </section>
+
+        <section style={deferredSectionStyle}>
+          <AuditPanels
+            auditLogs={overview.auditLogs}
+            backups={overview.backups}
+            onRunBackup={() => void handleRunBackup()}
+            backupBusy={backupBusy}
+          />
+        </section>
       </div>
     </main>
   );
