@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { BookOpenCheck, DatabaseBackup, LogOut, MessageCircleMore, Users, WalletCards } from 'lucide-react';
+import { AdminStudentManagementPanel } from '@/components/console/AdminStudentManagementPanel';
 import { AuditPanels } from '@/components/console/AuditPanels';
+import { CourseManagementPanel } from '@/components/console/CourseManagementPanel';
 import { EmployeeManagementPanel } from '@/components/console/EmployeeManagementPanel';
 import { LoginPanel } from '@/components/console/LoginPanel';
 import { MetricCard } from '@/components/console/MetricCard';
-import { StudentRecordsTable } from '@/components/console/StudentRecordsTable';
 import { StatusBadge } from '@/components/console/StatusBadge';
-import type { AdminOverview } from '@/lib/portal';
+import type { AdminOverview, CourseCatalogItem, StudentSummary } from '@/lib/portal';
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => ({}))) as T & { message?: string };
@@ -41,7 +42,11 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
   const [busyEmployeeId, setBusyEmployeeId] = useState<string | null>(null);
+  const [busyStudentId, setBusyStudentId] = useState<string | null>(null);
+  const [busyCourseId, setBusyCourseId] = useState<number | null>(null);
+  const [creatingCourse, setCreatingCourse] = useState(false);
   const [overview, setOverview] = useState<AdminOverview>(emptyOverview);
+  const [courses, setCourses] = useState<CourseCatalogItem[]>([]);
   const [latestCredentials, setLatestCredentials] = useState<{
     employeeNumber: string;
     loginIdentifier: string;
@@ -49,10 +54,17 @@ export default function AdminPage() {
     tempPassword: string;
   } | null>(null);
 
-  async function loadOverview() {
-    const response = await fetch('/api/admin/overview', { cache: 'no-store' });
-    const payload = await parseResponse<{ success: boolean; data: AdminOverview }>(response);
-    setOverview(payload.data);
+  async function loadDashboard() {
+    const [overviewResponse, coursesResponse] = await Promise.all([
+      fetch('/api/admin/overview', { cache: 'no-store' }),
+      fetch('/api/courses?includeInactive=1', { cache: 'no-store' }),
+    ]);
+
+    const overviewPayload = await parseResponse<{ success: boolean; data: AdminOverview }>(overviewResponse);
+    const coursesPayload = await parseResponse<{ success: boolean; data: CourseCatalogItem[] }>(coursesResponse);
+
+    setOverview(overviewPayload.data);
+    setCourses(coursesPayload.data);
   }
 
   useEffect(() => {
@@ -66,7 +78,7 @@ export default function AdminPage() {
 
         if (payload.authenticated && payload.actor?.role === 'admin') {
           setAuthenticated(true);
-          await loadOverview();
+          await loadDashboard();
         }
       } catch {
         setAuthenticated(false);
@@ -87,7 +99,7 @@ export default function AdminPage() {
       await parseResponse(response);
       setAuthenticated(true);
       setPassword('');
-      await loadOverview();
+      await loadDashboard();
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'تعذر تسجيل الدخول');
     } finally {
@@ -99,6 +111,7 @@ export default function AdminPage() {
     await fetch('/api/auth/logout', { method: 'POST' });
     setAuthenticated(false);
     setOverview(emptyOverview);
+    setCourses([]);
   }
 
   async function handleCreateEmployee(payload: {
@@ -128,7 +141,7 @@ export default function AdminPage() {
         staffCode: result.data.employee.staffCode,
         tempPassword: result.data.tempPassword,
       });
-      await loadOverview();
+      await loadDashboard();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : 'تعذر إنشاء الموظف');
     }
@@ -144,7 +157,7 @@ export default function AdminPage() {
       });
 
       await parseResponse(response);
-      await loadOverview();
+      await loadDashboard();
     } catch (toggleError) {
       setError(toggleError instanceof Error ? toggleError.message : 'تعذر تحديث حالة الموظف');
     } finally {
@@ -158,11 +171,164 @@ export default function AdminPage() {
       setError(null);
       const response = await fetch('/api/system/backup', { method: 'POST' });
       await parseResponse(response);
-      await loadOverview();
+      await loadDashboard();
     } catch (backupError) {
       setError(backupError instanceof Error ? backupError.message : 'تعذر إنشاء النسخة الاحتياطية');
     } finally {
       setBackupBusy(false);
+    }
+  }
+
+  async function handleUpdateStudent(
+    studentId: string,
+    payload: {
+      fullName: string;
+      phone: string;
+      studyLevel: string;
+      age: number;
+      courseIds: number[];
+      codeValidityDays: number;
+    },
+  ) {
+    try {
+      setBusyStudentId(studentId);
+      setError(null);
+      const response = await fetch(`/api/students/${studentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await parseResponse<{ success: boolean; data: StudentSummary }>(response);
+      setOverview((previous) => ({
+        ...previous,
+        students: previous.students.map((student) =>
+          student.id === studentId ? result.data : student,
+        ),
+      }));
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'تعذر تحديث السجل');
+    } finally {
+      setBusyStudentId(null);
+    }
+  }
+
+  async function handleDeleteStudent(studentId: string) {
+    if (!window.confirm('هل تريد حذف سجل الطالب نهائيًا؟')) {
+      return;
+    }
+
+    try {
+      setBusyStudentId(studentId);
+      setError(null);
+      const response = await fetch(`/api/students/${studentId}`, {
+        method: 'DELETE',
+      });
+      await parseResponse(response);
+      setOverview((previous) => ({
+        ...previous,
+        students: previous.students.filter((student) => student.id !== studentId),
+        stats: {
+          ...previous.stats,
+          studentCount: Math.max(previous.stats.studentCount - 1, 0),
+        },
+      }));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'تعذر حذف السجل');
+    } finally {
+      setBusyStudentId(null);
+    }
+  }
+
+  async function handleSendWhatsapp(studentId: string) {
+    try {
+      setBusyStudentId(studentId);
+      setError(null);
+      const response = await fetch(`/api/students/${studentId}/send-whatsapp`, {
+        method: 'POST',
+      });
+
+      const payload = await parseResponse<{ success: boolean; data: StudentSummary }>(response);
+      setOverview((previous) => ({
+        ...previous,
+        students: previous.students.map((student) =>
+          student.id === studentId ? payload.data : student,
+        ),
+      }));
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : 'تعذر إرسال الرسالة');
+    } finally {
+      setBusyStudentId(null);
+    }
+  }
+
+  async function handleCreateCourse(payload: CourseCatalogItem | Omit<CourseCatalogItem, 'id' | 'name' | 'price'> & { nameAr: string; nameEn: string; level: string; icon: string; benefitAr: string; benefitEn: string; detailsAr: string[]; detailsEn: string[]; originalPrice: number; grantPrice: number; isActive: boolean; }) {
+    try {
+      setCreatingCourse(true);
+      setError(null);
+      const response = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await parseResponse<{ success: boolean; data: CourseCatalogItem }>(response);
+      setCourses((previous) => [...previous, result.data].sort((a, b) => a.id - b.id));
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : 'تعذر إضافة الكورس');
+    } finally {
+      setCreatingCourse(false);
+    }
+  }
+
+  async function handleUpdateCourse(courseId: number, payload: {
+    nameAr: string;
+    nameEn: string;
+    level: string;
+    icon: string;
+    benefitAr: string;
+    benefitEn: string;
+    detailsAr: string[];
+    detailsEn: string[];
+    originalPrice: number;
+    grantPrice: number;
+    isActive: boolean;
+  }) {
+    try {
+      setBusyCourseId(courseId);
+      setError(null);
+      const response = await fetch(`/api/courses/${courseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await parseResponse<{ success: boolean; data: CourseCatalogItem }>(response);
+      setCourses((previous) => previous.map((course) => (course.id === courseId ? result.data : course)));
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'تعذر تحديث الكورس');
+    } finally {
+      setBusyCourseId(null);
+    }
+  }
+
+  async function handleDeleteCourse(courseId: number) {
+    if (!window.confirm('هل تريد حذف هذا الكورس نهائيًا؟')) {
+      return;
+    }
+
+    try {
+      setBusyCourseId(courseId);
+      setError(null);
+      const response = await fetch(`/api/courses/${courseId}`, {
+        method: 'DELETE',
+      });
+      await parseResponse(response);
+      setCourses((previous) => previous.filter((course) => course.id !== courseId));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'تعذر حذف الكورس');
+    } finally {
+      setBusyCourseId(null);
     }
   }
 
@@ -238,11 +404,22 @@ export default function AdminPage() {
           busyEmployeeId={busyEmployeeId}
         />
 
-        <StudentRecordsTable
-          title="سجل الطلاب الكامل"
-          subtitle="يعرض جميع الطلاب مع الموظف المسؤول وحالة الرسالة وصلاحية الكود."
+        <AdminStudentManagementPanel
           records={overview.students}
-          editable={false}
+          courses={courses}
+          busyStudentId={busyStudentId}
+          onSave={(studentId, payload) => void handleUpdateStudent(studentId, payload)}
+          onDelete={(studentId) => void handleDeleteStudent(studentId)}
+          onSendWhatsapp={(studentId) => void handleSendWhatsapp(studentId)}
+        />
+
+        <CourseManagementPanel
+          courses={courses}
+          creating={creatingCourse}
+          busyCourseId={busyCourseId}
+          onCreate={(payload) => void handleCreateCourse(payload)}
+          onUpdate={(courseId, payload) => void handleUpdateCourse(courseId, payload)}
+          onDelete={(courseId) => void handleDeleteCourse(courseId)}
         />
 
         <AuditPanels

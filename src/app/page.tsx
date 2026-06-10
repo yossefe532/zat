@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 type Step = 'hero' | 'code' | 'courses' | 'basket' | 'form' | 'success';
 
 export default function Home() {
+  const [courses, setCourses] = useState<Course[]>(COURSES);
   const [step, setStep] = useState<Step>('hero');
   const [lang, setLang] = useState<'ar' | 'en'>(() => {
     if (typeof window === 'undefined') return 'ar';
@@ -52,6 +53,31 @@ export default function Home() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetch('/api/courses', {
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const payload = (await response.json().catch(() => ({}))) as {
+          data?: Course[];
+        };
+
+        if (!response.ok || !payload.data) {
+          return;
+        }
+
+        setCourses(payload.data);
+      })
+      .catch(() => {
+        // Keep fallback courses when the API is unavailable.
+      });
+
+    return () => controller.abort();
+  }, []);
 
   const verifyGrantCode = async (code: string) => {
     const normalizedCode = code.trim().toUpperCase();
@@ -215,7 +241,7 @@ export default function Home() {
             {step === 'courses' && (
               <CourseSelection
                 lang={lang}
-                courses={COURSES}
+                courses={courses}
                 selectedCourses={selectedCourses}
                 onToggle={handleCourseToggle}
                 onBack={() => setStep('code')}

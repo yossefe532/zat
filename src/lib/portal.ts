@@ -15,8 +15,15 @@ type CourseRow = {
   id: number;
   name_ar: string;
   name_en: string;
+  icon?: string | null;
   level?: string | null;
+  original_price?: number | string | null;
   grant_price: number | string;
+  benefit_ar?: string | null;
+  benefit_en?: string | null;
+  details_ar?: string[] | null;
+  details_en?: string[] | null;
+  is_active?: boolean;
 };
 
 type EmployeeRow = {
@@ -75,6 +82,19 @@ export type CourseSnapshot = {
   name: string;
   price: number;
   level: string;
+};
+
+export type CourseCatalogItem = CourseSnapshot & {
+  nameAr: string;
+  nameEn: string;
+  icon: string;
+  benefitAr: string;
+  benefitEn: string;
+  detailsAr: string[];
+  detailsEn: string[];
+  originalPrice: number;
+  grantPrice: number;
+  isActive: boolean;
 };
 
 export type EmployeeSummary = {
@@ -146,7 +166,7 @@ function normalizePhoneNumber(value: string) {
   return value.replace(/[^\d]/g, '');
 }
 
-function toFallbackCourse(id: number): CourseSnapshot | null {
+function toFallbackCourseCatalogItem(id: number): CourseCatalogItem | null {
   const course = COURSES.find((item) => item.id === id);
 
   if (!course) {
@@ -158,6 +178,81 @@ function toFallbackCourse(id: number): CourseSnapshot | null {
     name: course.nameAr,
     price: course.grantPrice,
     level: course.level,
+    nameAr: course.nameAr,
+    nameEn: course.nameEn,
+    icon: course.icon,
+    benefitAr: course.benefitAr,
+    benefitEn: course.benefitEn,
+    detailsAr: course.detailsAr ?? [],
+    detailsEn: course.detailsEn ?? [],
+    originalPrice: course.originalPrice,
+    grantPrice: course.grantPrice,
+    isActive: true,
+  };
+}
+
+function toCourseSnapshot(course: CourseCatalogItem): CourseSnapshot {
+  return {
+    id: course.id,
+    name: course.nameAr,
+    price: course.grantPrice,
+    level: course.level,
+  };
+}
+
+function mapCourseRow(row: CourseRow): CourseCatalogItem {
+  return {
+    id: row.id,
+    name: row.name_ar,
+    price: Number(row.grant_price),
+    level: row.level ?? 'عام',
+    nameAr: row.name_ar,
+    nameEn: row.name_en,
+    icon: row.icon ?? '📚',
+    benefitAr: row.benefit_ar ?? row.details_ar?.[0] ?? 'تفاصيل الكورس متاحة عبر الإدارة.',
+    benefitEn: row.benefit_en ?? row.details_en?.[0] ?? 'Course details are available from the admin panel.',
+    detailsAr: row.details_ar ?? [],
+    detailsEn: row.details_en ?? [],
+    originalPrice: Number(row.original_price ?? row.grant_price),
+    grantPrice: Number(row.grant_price),
+    isActive: row.is_active ?? true,
+  };
+}
+
+function normalizeCourseTextList(values: string[]) {
+  return values
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function normalizeCourseInput(input: {
+  nameAr: string;
+  nameEn: string;
+  level: string;
+  icon: string;
+  benefitAr: string;
+  benefitEn: string;
+  detailsAr: string[];
+  detailsEn: string[];
+  originalPrice: number;
+  grantPrice: number;
+  isActive: boolean;
+}) {
+  const detailsAr = normalizeCourseTextList(input.detailsAr);
+  const detailsEn = normalizeCourseTextList(input.detailsEn);
+
+  return {
+    name_ar: input.nameAr.trim(),
+    name_en: input.nameEn.trim(),
+    icon: input.icon.trim() || '📚',
+    level: input.level.trim() || 'عام',
+    benefit_ar: input.benefitAr.trim(),
+    benefit_en: input.benefitEn.trim(),
+    details_ar: detailsAr,
+    details_en: detailsEn,
+    original_price: input.originalPrice,
+    grant_price: input.grantPrice,
+    is_active: input.isActive,
   };
 }
 
@@ -309,29 +404,127 @@ function mapBackup(row: BackupRow): BackupSummary {
   };
 }
 
-export async function getCourseCatalog() {
+export async function getCourseCatalog(options?: { includeInactive?: boolean }) {
   const supabase = requireServiceSupabaseClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('courses')
-    .select('id, name_ar, name_en, grant_price')
-    .eq('is_active', true)
+    .select('id, name_ar, name_en, icon, level, original_price, grant_price, benefit_ar, benefit_en, details_ar, details_en, is_active')
     .order('id');
 
-  if (error || !data || data.length === 0) {
-    return COURSES.map((course) => ({
-      id: course.id,
-      name: course.nameAr,
-      price: course.grantPrice,
-      level: course.level,
-    }));
+  if (!options?.includeInactive) {
+    query = query.eq('is_active', true);
   }
 
-  return (data as CourseRow[]).map((row) => ({
-    id: row.id,
-    name: row.name_ar,
-    price: Number(row.grant_price),
-    level: 'عام',
-  }));
+  const { data, error } = await query;
+
+  if (error || !data || data.length === 0) {
+    const fallbackCourses = COURSES.map((course) => toFallbackCourseCatalogItem(course.id)).filter(
+      (course): course is CourseCatalogItem => Boolean(course),
+    );
+
+    return options?.includeInactive
+      ? fallbackCourses
+      : fallbackCourses.filter((course) => course.isActive);
+  }
+
+  return (data as CourseRow[]).map(mapCourseRow);
+}
+
+export async function createCourse(
+  input: {
+    nameAr: string;
+    nameEn: string;
+    level: string;
+    icon: string;
+    benefitAr: string;
+    benefitEn: string;
+    detailsAr: string[];
+    detailsEn: string[];
+    originalPrice: number;
+    grantPrice: number;
+    isActive: boolean;
+  },
+  actor: SessionActor,
+) {
+  if (actor.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+
+  const supabase = requireServiceSupabaseClient();
+  const payload = normalizeCourseInput(input);
+  const { data, error } = await supabase
+    .from('courses')
+    .insert([payload])
+    .select('id, name_ar, name_en, icon, level, original_price, grant_price, benefit_ar, benefit_en, details_ar, details_en, is_active')
+    .single<CourseRow>();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? 'تعذر إنشاء الكورس');
+  }
+
+  await logAudit(actor, 'create_course', 'courses', String(data.id), {
+    nameAr: data.name_ar,
+    nameEn: data.name_en,
+  });
+
+  return mapCourseRow(data);
+}
+
+export async function updateCourse(
+  courseId: number,
+  input: {
+    nameAr: string;
+    nameEn: string;
+    level: string;
+    icon: string;
+    benefitAr: string;
+    benefitEn: string;
+    detailsAr: string[];
+    detailsEn: string[];
+    originalPrice: number;
+    grantPrice: number;
+    isActive: boolean;
+  },
+  actor: SessionActor,
+) {
+  if (actor.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+
+  const supabase = requireServiceSupabaseClient();
+  const payload = normalizeCourseInput(input);
+  const { data, error } = await supabase
+    .from('courses')
+    .update(payload)
+    .eq('id', courseId)
+    .select('id, name_ar, name_en, icon, level, original_price, grant_price, benefit_ar, benefit_en, details_ar, details_en, is_active')
+    .single<CourseRow>();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? 'تعذر تحديث الكورس');
+  }
+
+  await logAudit(actor, 'update_course', 'courses', String(courseId), {
+    nameAr: data.name_ar,
+    isActive: data.is_active ?? true,
+  });
+
+  return mapCourseRow(data);
+}
+
+export async function deleteCourse(courseId: number, actor: SessionActor) {
+  if (actor.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+
+  const supabase = requireServiceSupabaseClient();
+  const { error } = await supabase.from('courses').delete().eq('id', courseId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logAudit(actor, 'delete_course', 'courses', String(courseId), null);
 }
 
 export async function listEmployees() {
@@ -413,10 +606,11 @@ export async function updateEmployeeStatus(
 }
 
 async function resolveSelectedCourses(courseIds: number[]) {
-  const courseCatalog = await getCourseCatalog();
+  const courseCatalog = await getCourseCatalog({ includeInactive: true });
   const selectedCourses = courseIds
-    .map((id) => courseCatalog.find((course) => course.id === id) ?? toFallbackCourse(id))
-    .filter((course): course is CourseSnapshot => Boolean(course));
+    .map((id) => courseCatalog.find((course) => course.id === id) ?? toFallbackCourseCatalogItem(id))
+    .filter((course): course is CourseCatalogItem => Boolean(course))
+    .map(toCourseSnapshot);
 
   if (selectedCourses.length === 0) {
     throw new Error('لم يتم العثور على الدورات المختارة');
@@ -560,6 +754,83 @@ export async function updateStudentCodeValidity(
   });
 
   return mapStudent(data);
+}
+
+export async function updateStudentRecord(
+  studentId: string,
+  input: {
+    fullName: string;
+    phone: string;
+    studyLevel: string;
+    age: number;
+    courseIds: number[];
+    codeValidityDays: number;
+  },
+  actor: SessionActor,
+) {
+  if (actor.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+
+  const existing = await getStudentRowForActor(studentId, actor);
+  const supabase = requireServiceSupabaseClient();
+  const selectedCourses = await resolveSelectedCourses(input.courseIds);
+  const normalizedPhone = normalizePhoneNumber(input.phone);
+  const totalAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
+  const codeExpiresAt = new Date(
+    Date.now() + input.codeValidityDays * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  const { data, error } = await supabase
+    .from('student_records')
+    .update({
+      full_name_encrypted: encryptText(input.fullName.trim()),
+      full_name_hash: hashValue(input.fullName),
+      phone_encrypted: encryptText(normalizedPhone),
+      phone_hash: hashValue(normalizedPhone),
+      phone_last4: normalizedPhone.slice(-4),
+      study_level: input.studyLevel.trim(),
+      age: input.age,
+      courses: selectedCourses,
+      total_amount: totalAmount,
+      code_validity_days: input.codeValidityDays,
+      code_expires_at: codeExpiresAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', studentId)
+    .select('id, full_name_encrypted, phone_encrypted, study_level, age, courses, total_amount, final_code, code_validity_days, code_expires_at, employee_id, employee_name, employee_number, whatsapp_sent_at, whatsapp_delivery_id, created_at')
+    .single<StudentRow>();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? 'تعذر تحديث بيانات الطالب');
+  }
+
+  await logAudit(actor, 'update_student_record', 'student_records', studentId, {
+    previousPhoneLast4: decryptText(existing.phone_encrypted).slice(-4),
+    nextPhoneLast4: normalizedPhone.slice(-4),
+    previousValidityDays: existing.code_validity_days,
+    nextValidityDays: input.codeValidityDays,
+  });
+
+  return mapStudent(data);
+}
+
+export async function deleteStudentRecord(studentId: string, actor: SessionActor) {
+  if (actor.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+
+  const existing = await getStudentRowForActor(studentId, actor);
+  const supabase = requireServiceSupabaseClient();
+  const { error } = await supabase.from('student_records').delete().eq('id', studentId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logAudit(actor, 'delete_student_record', 'student_records', studentId, {
+    finalCode: existing.final_code,
+  });
 }
 
 export async function markStudentWhatsappSent(
