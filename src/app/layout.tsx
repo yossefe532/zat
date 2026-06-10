@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="h-full">
-      <body className={`${bodyFont.variable} ${displayFont.variable} font-sans min-h-screen flex flex-col antialiased`}>
+      <body className={`${bodyFont.className} ${bodyFont.variable} ${displayFont.variable} min-h-screen flex flex-col antialiased`}>
         {children}
       </body>
     </html>
