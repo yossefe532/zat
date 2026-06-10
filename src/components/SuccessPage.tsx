@@ -1,9 +1,10 @@
 'use client';
 
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MessageCircle, Copy, RefreshCw, Home, ShieldCheck, Sparkles } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { buildWhatsappLink, formatPrice } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 interface SuccessPageProps {
   lang: 'ar' | 'en';
@@ -36,18 +37,27 @@ export function SuccessPage({
   onReset
 }: SuccessPageProps) {
   const isAr = lang === 'ar';
+  const shouldReduceMotion = useReducedMotion();
+  const [countdown, setCountdown] = useState(5);
+  const [autoOpened, setAutoOpened] = useState(false);
+  const openedRef = useRef(false);
   
-  const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + 3);
-  const expiryDay = expiryDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'long' });
-  const expiryDateStr = expiryDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+  const { expiryDay, expiryDateStr } = useMemo(() => {
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 3);
 
-  const whatsappMessage = encodeURIComponent(
-    isAr 
+    return {
+      expiryDay: expiryDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'long' }),
+      expiryDateStr: expiryDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }),
+    };
+  }, [isAr]);
+
+  const whatsappMessage = useMemo(() => encodeURIComponent(
+    isAr
       ? `مرحباً، أرغب في تأكيد الحجز:
 الاسم: ${registrationData.fullName}
 الهاتف: ${registrationData.phone}
@@ -74,22 +84,53 @@ Payment Details:
 - 2nd Installment (Remaining): ${formatPrice(calculations.secondInstallment)} EGP
 
 ⚠️ Code Validity: This code is valid for 3 days only, expiring on ${expiryDay}, ${expiryDateStr}.`
-  );
+  ), [calculations.firstInstallment, calculations.secondInstallment, calculations.total, expiryDateStr, expiryDay, isAr, registrationData.age, registrationData.fullName, registrationData.phone, registrationData.registrationCode, selectedCourses]);
 
-  const whatsappLink = grantData
-    ? buildWhatsappLink(grantData.whatsappNumber, decodeURIComponent(whatsappMessage))
-    : `https://wa.me/?text=${whatsappMessage}`;
+  const whatsappLink = useMemo(
+    () => (grantData
+      ? buildWhatsappLink(grantData.whatsappNumber, decodeURIComponent(whatsappMessage))
+      : `https://wa.me/?text=${whatsappMessage}`),
+    [grantData, whatsappMessage]
+  );
 
   const copyCode = () => {
     navigator.clipboard.writeText(registrationData.registrationCode);
   };
 
+  useEffect(() => {
+    openedRef.current = false;
+
+    const countdownInterval = window.setInterval(() => {
+      setCountdown((current) => {
+        if (current <= 1) {
+          window.clearInterval(countdownInterval);
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+
+    const openTimeout = window.setTimeout(() => {
+      if (!openedRef.current) {
+        openedRef.current = true;
+        setAutoOpened(true);
+        window.location.href = whatsappLink;
+      }
+    }, 5000);
+
+    return () => {
+      window.clearInterval(countdownInterval);
+      window.clearTimeout(openTimeout);
+    };
+  }, [whatsappLink]);
+
   return (
     <section className="min-h-screen px-4 py-20 bg-background relative overflow-hidden flex items-center justify-center">
       <div className="container mx-auto max-w-2xl">
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={shouldReduceMotion ? { opacity: 0.98 } : { opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
+          transition={shouldReduceMotion ? { duration: 0.12 } : { duration: 0.3, ease: 'easeOut' }}
           className="hero-panel relative space-y-8 rounded-[2rem] p-6 text-center md:p-8"
         >
           <div className="absolute -top-10 left-1/2 flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full border-[6px] border-background bg-success shadow-xl shadow-success/30">
@@ -102,8 +143,8 @@ Payment Details:
             </h1>
             <p className="section-subtitle font-bold">
               {isAr 
-                ? 'شكراً لتسجيلك في مبادرة ذات. يرجى إرسال الكود أدناه عبر واتساب فوراً لتأكيد مكانك قبل انتهاء الصلاحية.'
-                : 'Thank you for registering. Please send the code via WhatsApp immediately to confirm your spot.'}
+                ? 'شكراً لتسجيلك في مبادرة ذات. سيتم فتح واتساب تلقائيًا لإرسال رسالة تأكيد الحجز، ويجب إرسالها فورًا حتى يتم تثبيت مكانك بشكل نهائي.'
+                : 'Thank you for registering. WhatsApp will open automatically to send the booking confirmation message, and it must be sent immediately to secure your spot.'}
             </p>
           </div>
           
@@ -167,11 +208,16 @@ Payment Details:
             </div>
           </div>
           
-          <div className="rounded-[1.5rem] border border-destructive/25 bg-destructive/10 p-5">
+          <div className="rounded-[1.5rem] border border-destructive/25 bg-destructive/10 p-5 space-y-3">
             <p className="text-sm md:text-base font-black text-destructive leading-relaxed">
               ⚠️ {isAr 
                 ? `تنبيه: الكود صالح لـ 3 أيام فقط! ينتهي يوم ${expiryDay} الموافق ${expiryDateStr}`
                 : `Alert: Code valid for 3 days! Expires on ${expiryDay}, ${expiryDateStr}`}
+            </p>
+            <p className="text-sm md:text-base font-black text-destructive leading-relaxed">
+              {isAr
+                ? 'إرسال رسالة واتساب الآن خطوة أساسية وإلزامية لتأكيد الحجز. في حال عدم الإرسال السريع قد لا يتم اعتماد الطلب أو تثبيت المكان.'
+                : 'Sending the WhatsApp confirmation now is mandatory. Without sending it quickly, your booking may not be approved or reserved.'}
             </p>
           </div>
 
@@ -205,6 +251,18 @@ Payment Details:
           )}
           
           <div className="space-y-6 pt-4">
+            <div className="rounded-[1.5rem] border border-[#25D366]/20 bg-[#25D366]/10 p-5 text-center">
+              <p className="text-sm md:text-base font-black text-[#128C7E]">
+                {autoOpened
+                  ? isAr
+                    ? 'تم الآن توجيهك إلى واتساب. إذا لم تُفتح الصفحة تلقائيًا، استخدم الزر الأخضر بالأسفل فورًا.'
+                    : 'You are now being redirected to WhatsApp. If it did not open automatically, use the green button below immediately.'
+                  : isAr
+                    ? `سيتم فتح واتساب تلقائيًا خلال ${countdown} ثوانٍ لإرسال رسالة تأكيد الحجز.`
+                    : `WhatsApp will open automatically in ${countdown} seconds to send your booking confirmation.`}
+              </p>
+            </div>
+
             <a
               href={whatsappLink}
               target="_blank"
@@ -212,7 +270,13 @@ Payment Details:
               className="inline-flex w-full items-center justify-center gap-4 rounded-[1.5rem] bg-[#25D366] py-5 text-lg md:text-xl font-black text-white shadow-xl shadow-[#25D366]/30 transition-all hover:scale-[1.02] hover:bg-[#25D366]/90"
             >
               <MessageCircle className="w-6 h-6" />
-              {isAr ? 'تأكيد الحجز عبر واتساب' : 'Confirm via WhatsApp'}
+              {autoOpened
+                ? isAr
+                  ? 'فتح واتساب مرة أخرى'
+                  : 'Open WhatsApp Again'
+                : isAr
+                  ? `تأكيد الحجز عبر واتساب خلال ${countdown} ثوانٍ`
+                  : `Confirm via WhatsApp in ${countdown}s`}
             </a>
 
             {suggestedNextCourse && (
