@@ -1,20 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { COURSES, DEFAULT_GRANT_CODES, DISCOUNT_RULES } from '@/lib/data';
-import { Course, GrantCode, RegistrationInput } from '@/lib/types';
+import { COURSES, DEFAULT_GRANT_CODES, DISCOUNT_RULES, SMART_BUNDLES } from '@/lib/data';
+import { Course, GrantCode, LearningBundle, RegistrationInput } from '@/lib/types';
 import { Hero } from '@/components/Hero';
 import { CodeGate } from '@/components/CodeGate';
 import { CourseSelection } from '@/components/CourseSelection';
 import { Basket } from '@/components/Basket';
 import { RegistrationForm } from '@/components/RegistrationForm';
 import { SuccessPage } from '@/components/SuccessPage';
+import { PathQuiz } from '@/components/PathQuiz';
+import type { QuizResult } from '@/components/PathQuiz';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { submitRegistration, verifyGrantCodeAction } from '@/actions';
 import { AnimatePresence, motion } from 'framer-motion';
 
-type Step = 'hero' | 'code' | 'courses' | 'basket' | 'form' | 'success';
+type Step = 'hero' | 'quiz' | 'code' | 'courses' | 'basket' | 'form' | 'success';
 
 export default function Home() {
   const [courses, setCourses] = useState<Course[]>(COURSES);
@@ -30,6 +32,7 @@ export default function Home() {
   const [grantCode, setGrantCode] = useState<string>('');
   const [grantData, setGrantData] = useState<GrantCode | null>(null);
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
+  const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [registrationData, setRegistrationData] = useState<{
     fullName: string;
     phone: string;
@@ -119,13 +122,24 @@ export default function Home() {
       return sum + course.originalPrice;
     }, 0);
 
-    let discount = 0;
+    let countDiscount = 0;
     
     for (const rule of DISCOUNT_RULES) {
       if (selectedCourses.length >= rule.count) {
-        discount = rule.discount;
+        countDiscount = rule.discount;
       }
     }
+
+    const activeBundle = SMART_BUNDLES.find((bundle) => {
+      if (bundle.courseIds.length !== selectedCourses.length) {
+        return false;
+      }
+
+      return bundle.courseIds.every((courseId) => selectedCourses.some((course) => course.id === courseId));
+    });
+
+    const bundleDiscount = activeBundle?.extraDiscount ?? 0;
+    const discount = Math.max(countDiscount, bundleDiscount);
     
     const total = Math.max(subtotal - discount, 0);
     const firstInstallment = selectedCourses.length === 0
@@ -144,6 +158,16 @@ export default function Home() {
       }
       return [...prev, course];
     });
+  };
+
+  const handleQuizComplete = (result: QuizResult) => {
+    setQuizResult(result);
+    setSelectedCourses(courses.filter((course) => result.recommendedCourseIds.includes(course.id)));
+    setStep('code');
+  };
+
+  const handleApplyBundle = (bundle: LearningBundle) => {
+    setSelectedCourses(courses.filter((course) => bundle.courseIds.includes(course.id)));
   };
 
   const handleRegistration = async (data: { fullName: string; phone: string; age: number }) => {
@@ -181,6 +205,7 @@ export default function Home() {
     setGrantCode('');
     setGrantData(null);
     setSelectedCourses([]);
+    setQuizResult(null);
     setRegistrationData(null);
     setRequestCodeWhatsappUrl(null);
   };
@@ -219,7 +244,19 @@ export default function Home() {
             {step === 'hero' && (
               <Hero 
                 lang={lang} 
-                onStart={() => setStep('code')} 
+                onStart={() => setStep('quiz')} 
+              />
+            )}
+
+            {step === 'quiz' && (
+              <PathQuiz
+                lang={lang}
+                onBack={() => setStep('hero')}
+                onSkip={() => {
+                  setQuizResult(null);
+                  setStep('code');
+                }}
+                onComplete={handleQuizComplete}
               />
             )}
             
@@ -227,7 +264,7 @@ export default function Home() {
               <CodeGate 
                 lang={lang}
                 onVerify={verifyGrantCode}
-                onBack={() => setStep('hero')}
+                onBack={() => setStep('quiz')}
                 onSkip={() => {
                   setGrantData(null);
                   setGrantCode('');
@@ -248,6 +285,9 @@ export default function Home() {
                 onContinue={() => setStep('basket')}
                 grantData={currentGrantData}
                 calculations={calculations}
+                quizResult={quizResult}
+                bundles={SMART_BUNDLES}
+                onApplyBundle={handleApplyBundle}
               />
             )}
             

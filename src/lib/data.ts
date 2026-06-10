@@ -118,3 +118,50 @@ export const DISCOUNT_RULES = [
   { count: 3, discount: 50 },
   { count: 5, discount: 100 }
 ];
+
+export const SMART_BUNDLES = [
+  {
+    id: 'language-starter',
+    nameAr: 'مسار اللغات السريع',
+    nameEn: 'Fast Language Path',
+    descriptionAr: 'ابدأ بأساس قوي في اللغات مع مسار مناسب لمن يريد تحسين التواصل بسرعة.',
+    descriptionEn: 'Build a strong language foundation with a path tailored for fast communication growth.',
+    badgeAr: 'الأفضل لتطوير اللغة',
+    badgeEn: 'Best for language growth',
+    courseIds: [1, 2],
+    extraDiscount: 75,
+  },
+  {
+    id: 'career-digital',
+    nameAr: 'باقة الشغل الرقمي',
+    nameEn: 'Digital Career Bundle',
+    descriptionAr: 'تجمع بين المهارات المكتبية والبرمجة لتكوين مسار عملي أقرب لسوق العمل.',
+    descriptionEn: 'Combines office skills and programming into a practical job-ready path.',
+    badgeAr: 'الأفضل لسوق العمل',
+    badgeEn: 'Best for job readiness',
+    courseIds: [3, 6],
+    extraDiscount: 75,
+  },
+  {
+    id: 'creative-pro',
+    nameAr: 'المسار الإبداعي',
+    nameEn: 'Creative Pro Path',
+    descriptionAr: 'مسار متكامل لمن يريد الدخول في التصميم وصناعة المحتوى بشكل احترافي.',
+    descriptionEn: 'A complete path for learners who want to enter design and visual content professionally.',
+    badgeAr: 'الأفضل للمحتوى والتصميم',
+    badgeEn: 'Best for design and content',
+    courseIds: [4, 5],
+    extraDiscount: 75,
+  },
+  {
+    id: 'growth-track',
+    nameAr: 'مسار الانطلاقة الأقوى',
+    nameEn: 'Growth Track Bundle',
+    descriptionAr: 'اختيار متكامل يجمع اللغة والمهارة الرقمية والبرمجة في باقة واحدة أقوى.',
+    descriptionEn: 'A stronger all-round option that combines language, digital skills, and programming.',
+    badgeAr: 'أفضل قيمة حالياً',
+    badgeEn: 'Best current value',
+    courseIds: [1, 3, 6],
+    extraDiscount: 150,
+  },
+];

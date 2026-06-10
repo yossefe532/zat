@@ -48,6 +48,18 @@ export interface DiscountRule {
   discount: number;
 }
 
+export interface LearningBundle {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
+  badgeAr: string;
+  badgeEn: string;
+  courseIds: number[];
+  extraDiscount: number;
+}
+
 export interface GrantOwnerNotification {
   whatsappUrl: string;
   phone: string;
