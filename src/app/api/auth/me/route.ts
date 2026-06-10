@@ -15,6 +15,15 @@ export async function GET() {
       actor,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+
+    if (
+      message === 'Supabase service role is not configured'
+      || message.startsWith('Missing required environment variable:')
+    ) {
+      return NextResponse.json({ authenticated: false }, { status: 200 });
+    }
+
     return errorResponse(error);
   }
 }
