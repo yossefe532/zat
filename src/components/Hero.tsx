@@ -6,10 +6,12 @@ import { motion } from 'framer-motion';
 interface HeroProps {
   lang: 'ar' | 'en';
   onStart: () => void;
+  experimentVariant?: 'direct' | 'guided';
 }
 
-export function Hero({ lang, onStart }: HeroProps) {
+export function Hero({ lang, onStart, experimentVariant = 'guided' }: HeroProps) {
   const isAr = lang === 'ar';
+  const isDirectVariant = experimentVariant === 'direct';
 
   const valueCards = [
     {
@@ -73,8 +75,12 @@ export function Hero({ lang, onStart }: HeroProps) {
 
           <div className="mx-auto max-w-3xl rounded-full border border-primary/15 bg-primary/8 px-5 py-3 text-center text-xs font-black text-primary shadow-sm backdrop-blur-md md:text-sm">
             {isAr
-              ? 'التقديم الحالي مفتوح الآن، ويمكنك معرفة السعر النهائي والتوفير مباشرة قبل تأكيد التسجيل.'
-              : 'Registration is currently open, and you can see your final price and savings before confirming.'}
+              ? (isDirectVariant
+                ? 'ابدأ الآن واعرف السعر النهائي والتوفير قبل أي خطوة تأكيد.'
+                : 'التقديم الحالي مفتوح الآن، ويمكنك معرفة السعر النهائي والتوفير مباشرة قبل تأكيد التسجيل.')
+              : (isDirectVariant
+                ? 'Start now and see your final price and savings before any confirmation step.'
+                : 'Registration is currently open, and you can see your final price and savings before confirming.')}
           </div>
           
           <h1 className="section-title mx-auto max-w-4xl font-black text-primary">
@@ -156,7 +162,9 @@ export function Hero({ lang, onStart }: HeroProps) {
               onClick={onStart}
               className="action-primary group relative inline-flex items-center justify-center gap-3 rounded-3xl px-10 py-4 text-lg font-black"
             >
-              🚀 {isAr ? 'ابدأ التسجيل الآن' : 'Start Registration Now'}
+              🚀 {isAr
+                ? (isDirectVariant ? 'احجز مكانك الآن' : 'ابدأ التسجيل الآن')
+                : (isDirectVariant ? 'Reserve Your Spot Now' : 'Start Registration Now')}
               <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-2 rtl:rotate-180" />
             </button>
             <button
@@ -164,7 +172,9 @@ export function Hero({ lang, onStart }: HeroProps) {
               className="action-secondary inline-flex items-center justify-center gap-3 rounded-3xl px-8 py-4 text-base font-black text-foreground hover:border-primary/35 hover:text-primary"
             >
               <Trophy className="h-5 w-5 text-primary" />
-              {isAr ? 'اعرف أفضل مسار لك' : 'Find Your Best Path'}
+              {isAr
+                ? (isDirectVariant ? 'اعرف خطوتك التالية' : 'اعرف أفضل مسار لك')
+                : (isDirectVariant ? 'Find Your Next Step' : 'Find Your Best Path')}
             </button>
           </div>
 

@@ -1,13 +1,14 @@
 'use client';
 
-import { ArrowRight, ArrowLeft, ShoppingCart, Tag, ReceiptText } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, MessageCircle, ShoppingCart, Sparkles, Tag, ReceiptText } from 'lucide-react';
+import { DISCOUNT_RULES, SMART_BUNDLES } from '@/lib/data';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
-import { DISCOUNT_RULES } from '@/lib/data';
 import { motion } from 'framer-motion';
 
 interface BasketProps {
   lang: 'ar' | 'en';
+  allCourses: Course[];
   selectedCourses: Course[];
   grantData: { nameAr: string; nameEn: string } | null;
   calculations: {
@@ -19,15 +20,20 @@ interface BasketProps {
   };
   onBack: () => void;
   onContinue: () => void;
+  onAddSuggestedCourse: (course: Course) => void;
+  supportWhatsappUrl: string;
 }
 
 export function Basket({
   lang,
+  allCourses,
   selectedCourses,
   grantData,
   calculations,
   onBack,
-  onContinue
+  onContinue,
+  onAddSuggestedCourse,
+  supportWhatsappUrl,
 }: BasketProps) {
   const isAr = lang === 'ar';
   const displayedCoursePrice = selectedCourses.length === 0
@@ -37,6 +43,29 @@ export function Basket({
   const applicableDiscount = DISCOUNT_RULES.find(
     rule => selectedCourses.length >= rule.count
   );
+
+  const suggestedBundle = SMART_BUNDLES
+    .map((bundle) => {
+      const selectedIds = selectedCourses.map((course) => course.id);
+      const missingCourseIds = bundle.courseIds.filter((courseId) => !selectedIds.includes(courseId));
+      const matchedCount = bundle.courseIds.length - missingCourseIds.length;
+
+      return {
+        bundle,
+        matchedCount,
+        missingCourseIds,
+      };
+    })
+    .filter((entry) => entry.matchedCount > 0 && entry.missingCourseIds.length > 0)
+    .sort((a, b) => b.matchedCount - a.matchedCount)[0];
+
+  const suggestedCourse = suggestedBundle
+    ? allCourses.find((course) => course.id === suggestedBundle.missingCourseIds[0]) ?? null
+    : null;
+
+  const suggestedCoursePrice = suggestedCourse
+    ? (grantData ? suggestedCourse.grantPrice : suggestedCourse.originalPrice)
+    : 0;
 
   return (
     <section className="min-h-screen px-4 py-20 bg-background relative overflow-hidden">
@@ -84,6 +113,47 @@ export function Basket({
             </motion.div>
           ))}
         </div>
+
+        {suggestedCourse && suggestedBundle && (
+          <div className="hero-panel mb-10 rounded-[1.8rem] p-5 text-right md:p-6">
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-3 md:max-w-xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card/70 px-4 py-2 text-xs font-black text-primary shadow-sm backdrop-blur-md md:text-sm">
+                  <Sparkles className="h-4 w-4" />
+                  {isAr ? 'اقتراح ذكي لرفع قيمة اختيارك' : 'Smart suggestion to improve your selection'}
+                </div>
+                <h3 className="text-lg font-black text-primary md:text-xl">
+                  {isAr
+                    ? `أضف ${suggestedCourse.nameAr} لتقترب من ${suggestedBundle.bundle.nameAr}`
+                    : `Add ${suggestedCourse.nameEn} to move closer to ${suggestedBundle.bundle.nameEn}`}
+                </h3>
+                <p className="text-sm font-bold leading-7 text-muted-foreground md:text-base">
+                  {isAr
+                    ? `بمجرد إضافة هذا الكورس سترفع قيمة المسار الحالي وتقترب من خصم يصل إلى ${suggestedBundle.bundle.extraDiscount} جنيه داخل هذه الباقة.`
+                    : `Adding this course strengthens your current path and moves you toward a bundle discount of up to ${suggestedBundle.bundle.extraDiscount} EGP.`}
+                </p>
+              </div>
+              <div className="metric-card rounded-[1.4rem] p-4 text-center md:min-w-[15rem]">
+                <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">
+                  {isAr ? 'الكورس المقترح' : 'Suggested course'}
+                </p>
+                <p className="mt-2 text-lg font-black text-foreground">
+                  {suggestedCourse.icon} {isAr ? suggestedCourse.nameAr : suggestedCourse.nameEn}
+                </p>
+                <p className="mt-1 text-base font-black text-primary">
+                  {formatPrice(suggestedCoursePrice)} {isAr ? 'ج' : 'EGP'}
+                </p>
+                <button
+                  onClick={() => onAddSuggestedCourse(suggestedCourse)}
+                  className="action-primary mt-4 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {isAr ? 'أضف الكورس المقترح' : 'Add suggested course'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
         <div className="hero-panel overflow-hidden rounded-[2rem]">
           <div className="flex items-center gap-3 border-b border-border/80 bg-primary/6 p-5">
@@ -140,6 +210,26 @@ export function Basket({
                   <span className="text-lg md:text-xl font-black text-primary/70">{formatPrice(calculations.secondInstallment)} {isAr ? 'ج' : 'EGP'}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="metric-card rounded-[1.6rem] p-5 space-y-4">
+              <p className="text-sm md:text-base font-black text-primary">
+                {isAr ? 'لو محتاج مساعدة قبل الإكمال' : 'Need help before completion?'}
+              </p>
+              <p className="text-sm font-bold leading-7 text-muted-foreground">
+                {isAr
+                  ? 'تواصل مع واتساب الدعم إذا كنت محتارًا بين باقة وكورس، أو تريد تأكيدًا سريعًا قبل المتابعة.'
+                  : 'Contact support on WhatsApp if you need help choosing between a course and a bundle before continuing.'}
+              </p>
+              <a
+                href={supportWhatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="action-secondary inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black text-primary hover:border-primary/35 hover:bg-primary/5"
+              >
+                <MessageCircle className="h-4 w-4" />
+                {isAr ? 'مراسلة واتساب الدعم' : 'Message support on WhatsApp'}
+              </a>
             </div>
           </div>
         </div>

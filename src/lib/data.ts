@@ -113,6 +113,7 @@ export const DEFAULT_GRANT_CODES = {
 };
 
 export const ADMIN_FEES = 0;
+export const SUPPORT_WHATSAPP_NUMBER = '201029398592';
 
 export const DISCOUNT_RULES = [
   { count: 3, discount: 50 },

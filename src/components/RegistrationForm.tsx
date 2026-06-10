@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { ArrowRight, User, Phone, Calendar, AlertCircle } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
+import Link from 'next/link';
+import type { RegistrationDraft } from '@/lib/types';
 
 interface RegistrationFormProps {
   lang: 'ar' | 'en';
@@ -19,6 +21,9 @@ interface RegistrationFormProps {
   };
   onBack: () => void;
   onSubmit: (data: { fullName: string; phone: string; age: number }) => Promise<void>;
+  draftData: RegistrationDraft;
+  onDraftChange: (draft: RegistrationDraft) => void;
+  supportWhatsappUrl: string;
 }
 
 export function RegistrationForm({
@@ -26,18 +31,50 @@ export function RegistrationForm({
   selectedCourses,
   calculations,
   onBack,
-  onSubmit
+  onSubmit,
+  draftData,
+  onDraftChange,
+  supportWhatsappUrl,
 }: RegistrationFormProps) {
   const isAr = lang === 'ar';
+  const instructions = isAr
+    ? [
+        'سعر الكورس بدون كود خصم هو 3000 جنيه.',
+        'عند استخدام كود خصم معتمد يصبح سعر الكورس 650 جنيه، مع 25 جنيه رسوم إدارية.',
+        'نظام التقسيط يكون 200 جنيه للقسط الأول، والباقي يُستكمل في القسط الثاني حسب تفاصيل الحجز.',
+        'يمكنك اختيار أكثر من كورس بشرط الالتزام بالحضور وتسليم التاسكات المطلوبة.',
+        'يمكنك الدراسة بنظام أونلاين أو أوفلاين حسب طبيعة الكورس والمواعيد المتاحة.',
+        'يُمنح المتدرب شهادة حضور بعد إتمام التدريب وفق سياسة المبادرة.',
+        'في حالة الغياب المتكرر أو عدم الالتزام، يحق للإدارة إلغاء الحجز أو المنحة.'
+      ]
+    : [
+        'Course price without a discount code is 3000 EGP.',
+        'With an approved discount code, the course price becomes 650 EGP plus 25 EGP administrative fees.',
+        'Installments start with a 200 EGP first payment, and the remaining amount is completed in the second installment based on your booking details.',
+        'You may select more than one course if you can commit to attendance and required tasks.',
+        'You can study online or offline depending on the course format and available schedule.',
+        'Trainees receive an attendance certificate after completing the training according to the initiative policy.',
+        'Repeated absence or lack of commitment may result in canceling the booking or grant.'
+      ];
   const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    age: ''
+    fullName: draftData.fullName,
+    phone: draftData.phone,
+    age: draftData.age
   });
-  const [agreed, setAgreed] = useState(false);
+  const [agreed, setAgreed] = useState(draftData.agreed);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
+
+  const updateDraft = (nextFormData: typeof formData, nextAgreed = agreed) => {
+    setFormData(nextFormData);
+    onDraftChange({
+      fullName: nextFormData.fullName,
+      phone: nextFormData.phone,
+      age: nextFormData.age,
+      agreed: nextAgreed,
+    });
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -121,7 +158,7 @@ export function RegistrationForm({
                   type="text"
                   value={formData.fullName}
                   onChange={(e) => {
-                    setFormData({ ...formData, fullName: e.target.value });
+                    updateDraft({ ...formData, fullName: e.target.value });
                     if (errors.fullName) setErrors({ ...errors, fullName: '' });
                   }}
                   placeholder={isAr ? 'أدخل اسمك الكامل' : 'Enter your full name'}
@@ -146,7 +183,7 @@ export function RegistrationForm({
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => {
-                    setFormData({ ...formData, phone: e.target.value });
+                    updateDraft({ ...formData, phone: e.target.value });
                     if (errors.phone) setErrors({ ...errors, phone: '' });
                   }}
                   placeholder="01xxxxxxxxx"
@@ -173,7 +210,7 @@ export function RegistrationForm({
                 type="number"
                 value={formData.age}
                 onChange={(e) => {
-                  setFormData({ ...formData, age: e.target.value });
+                  updateDraft({ ...formData, age: e.target.value });
                   if (errors.age) setErrors({ ...errors, age: '' });
                 }}
                 placeholder={isAr ? 'أدخل عمرك' : 'Enter your age'}
@@ -189,35 +226,59 @@ export function RegistrationForm({
               )}
             </div>
 
-            {/* Legacy Instructions Section */}
             <div className="metric-card rounded-[1.8rem] p-6 md:p-8">
-              <h4 className="mb-6 rounded-2xl bg-primary/6 p-4 text-center text-lg md:text-xl font-black title-font text-primary">
+              <h4 className="mb-4 rounded-2xl bg-primary/6 p-4 text-center text-lg md:text-xl font-black title-font text-primary">
                 {isAr ? 'تعليمات مبادرة ذات الرقمية' : 'ZAT Digital Initiative Instructions'}
               </h4>
-              <ul className="space-y-4">
-                {[
-                  isAr ? 'سعر المنحة لكل كورس: 675 جنيه فقط في حال وجود كود خصم.' : 'Grant price per course is 675 EGP only with discount code.',
-                  isAr ? 'لا توجد رسوم إضافية على سعر المنحة.' : 'No extra fees are added to the grant price.',
-                  isAr ? 'نظام التقسيط: القسط الأول 200 جنيه لكل كورس، والقسط الثاني 475 جنيه لكل كورس.' : 'Installments: 1st is 200 EGP per course, 2nd is 475 EGP per course.',
-                  isAr ? 'يستلم المتدرب شهادة حضور لكل تدريب بعلامة مائية هولوجرام.' : 'Students receive hologram certificates for each training.',
-                  isAr ? 'يفصل الطالب من المنحة في حال تجاوز غياب 3 محاضرات بدون عذر.' : 'Dismissal occurs after 3 unexcused absences.',
-                ].map((instruction, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm md:text-base font-bold text-muted-foreground leading-relaxed">
-                    <div className="w-5 h-5 mt-1 rounded-full bg-primary flex items-center justify-center text-white text-xs flex-shrink-0">●</div>
+              <p className="mb-6 text-center text-sm md:text-base font-semibold text-muted-foreground">
+                {isAr
+                  ? 'يرجى قراءة البنود التالية بعناية قبل تأكيد التسجيل النهائي.'
+                  : 'Please read the following points carefully before final confirmation.'}
+              </p>
+              <ul
+                className={`space-y-3 text-sm md:text-base leading-7 text-foreground marker:text-primary ${
+                  isAr ? 'list-disc pr-6 text-right font-semibold' : 'list-disc pl-6 text-left font-medium'
+                }`}
+              >
+                {instructions.map((instruction, i) => (
+                  <li key={i} className="ps-1">
                     {instruction}
                   </li>
                 ))}
               </ul>
+              <div className="grid gap-3 pt-6 md:grid-cols-2">
+                <Link href="/privacy" className="rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-center text-sm font-black text-primary transition-colors hover:border-primary/35 hover:bg-primary/5">
+                  {isAr ? 'سياسة الخصوصية' : 'Privacy Policy'}
+                </Link>
+                <Link href="/terms" className="rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-center text-sm font-black text-primary transition-colors hover:border-primary/35 hover:bg-primary/5">
+                  {isAr ? 'شروط الاستخدام' : 'Terms of Use'}
+                </Link>
+                <Link href="/refund-support" className="rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-center text-sm font-black text-primary transition-colors hover:border-primary/35 hover:bg-primary/5">
+                  {isAr ? 'الاسترجاع والدعم' : 'Refund & Support'}
+                </Link>
+                <Link href="/payment-security" className="rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-center text-sm font-black text-primary transition-colors hover:border-primary/35 hover:bg-primary/5">
+                  {isAr ? 'الدفع والأمان' : 'Payment & Security'}
+                </Link>
+              </div>
               <div className="mt-8 pt-6 border-t border-dashed border-border flex items-center gap-4 justify-center">
                 <input 
                   type="checkbox" 
                   id="agree-check" 
                   checked={agreed}
-                  onChange={(e) => setAgreed(e.target.checked)}
+                  onChange={(e) => {
+                    const nextAgreed = e.target.checked;
+                    setAgreed(nextAgreed);
+                    onDraftChange({
+                      fullName: formData.fullName,
+                      phone: formData.phone,
+                      age: formData.age,
+                      agreed: nextAgreed,
+                    });
+                  }}
                   className="h-5 w-5 rounded border-2 border-primary text-primary focus:ring-primary"
                 />
                 <label htmlFor="agree-check" className="cursor-pointer text-sm md:text-base font-black text-foreground">
-                  {isAr ? 'أوافق وأقر أني قرأت كل التعليمات الموضحة أعلاه' : 'I agree and acknowledge the above instructions'}
+                  {isAr ? 'أوافق على التعليمات وسياسة الخصوصية وشروط الاستخدام وسياسة الاسترجاع والدعم' : 'I agree to the instructions, privacy policy, terms of use, and refund/support policy'}
                 </label>
               </div>
               {errors.agreed && (
@@ -250,6 +311,25 @@ export function RegistrationForm({
                   <span className="text-xl md:text-2xl font-black text-primary/70">{formatPrice(calculations.secondInstallment)} {isAr ? 'ج' : 'EGP'}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="metric-card rounded-[1.8rem] p-6 space-y-4">
+              <h4 className="text-lg md:text-xl font-black title-font text-primary">
+                {isAr ? 'الثقة والدعم قبل التأكيد' : 'Trust and support before confirmation'}
+              </h4>
+              <div className="space-y-3 text-sm md:text-base font-bold text-muted-foreground">
+                <p>{isAr ? 'بياناتك الحالية تُستخدم فقط لإتمام التسجيل والتواصل بشأن الحجز.' : 'Your current data is only used to complete registration and coordinate your reservation.'}</p>
+                <p>{isAr ? 'يمكنك مراجعة السياسات كاملة من الروابط أعلاه قبل الإرسال النهائي.' : 'You can review all policies from the links above before the final submission.'}</p>
+                <p>{isAr ? 'إذا احتجت مساعدة فورية، يمكنك التواصل عبر واتساب الدعم مباشرة.' : 'If you need immediate help, you can contact support on WhatsApp directly.'}</p>
+              </div>
+              <a
+                href={supportWhatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="action-secondary inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-black text-primary hover:border-primary/35 hover:bg-primary/5"
+              >
+                {isAr ? 'التواصل مع واتساب الدعم' : 'Contact support on WhatsApp'}
+              </a>
             </div>
             
             <button

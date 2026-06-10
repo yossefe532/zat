@@ -71,3 +71,10 @@ export interface CodeRequestInput {
   phone: string;
   email: string;
 }
+
+export interface RegistrationDraft {
+  fullName: string;
+  phone: string;
+  age: string;
+  agreed: boolean;
+}

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { COURSES, DEFAULT_GRANT_CODES, DISCOUNT_RULES, SMART_BUNDLES } from '@/lib/data';
-import { Course, GrantCode, LearningBundle, RegistrationInput } from '@/lib/types';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { buildWhatsappLink } from '@/lib/utils';
+import { COURSES, DEFAULT_GRANT_CODES, DISCOUNT_RULES, SMART_BUNDLES, SUPPORT_WHATSAPP_NUMBER } from '@/lib/data';
+import { Course, GrantCode, LearningBundle, RegistrationDraft, RegistrationInput } from '@/lib/types';
 import { Hero } from '@/components/Hero';
 import { CodeGate } from '@/components/CodeGate';
 import { CourseSelection } from '@/components/CourseSelection';
@@ -15,8 +17,12 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { submitRegistration, verifyGrantCodeAction } from '@/actions';
 import { AnimatePresence, motion } from 'framer-motion';
+import { APP_FEATURES } from '@/lib/feature-flags';
+import { trackEvent } from '@/lib/analytics';
+import { getStickyVariant, type HeroExperimentVariant } from '@/lib/experiments';
 
 type Step = 'hero' | 'quiz' | 'code' | 'courses' | 'basket' | 'form' | 'success';
+const FLOW_DRAFT_KEY = 'zat_flow_draft_v1';
 
 export default function Home() {
   const [courses, setCourses] = useState<Course[]>(COURSES);
@@ -33,6 +39,12 @@ export default function Home() {
   const [grantData, setGrantData] = useState<GrantCode | null>(null);
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
+  const [registrationDraft, setRegistrationDraft] = useState<RegistrationDraft>({
+    fullName: '',
+    phone: '',
+    age: '',
+    agreed: false,
+  });
   const [registrationData, setRegistrationData] = useState<{
     fullName: string;
     phone: string;
@@ -40,6 +52,15 @@ export default function Home() {
     registrationCode: string;
   } | null>(null);
   const [requestCodeWhatsappUrl, setRequestCodeWhatsappUrl] = useState<string | null>(null);
+  const [heroVariant] = useState<HeroExperimentVariant>(() => {
+    if (!APP_FEATURES.heroExperiment || typeof window === 'undefined') {
+      return 'guided';
+    }
+
+    return getStickyVariant('hero_primary_cta', ['direct', 'guided'], 'guided') as HeroExperimentVariant;
+  });
+  const restoredDraftRef = useRef(false);
+  const exposedVariantRef = useRef(false);
 
   useEffect(() => {
     localStorage.setItem('zat_lang', lang);
@@ -56,6 +77,15 @@ export default function Home() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
+
+  useEffect(() => {
+    if (!APP_FEATURES.lightweightAnalytics || exposedVariantRef.current) {
+      return;
+    }
+
+    trackEvent('hero_variant_assigned', { variant: heroVariant });
+    exposedVariantRef.current = true;
+  }, [heroVariant]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -82,6 +112,96 @@ export default function Home() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (!APP_FEATURES.progressDraft || restoredDraftRef.current || typeof window === 'undefined') {
+      return;
+    }
+
+    const raw = window.localStorage.getItem(FLOW_DRAFT_KEY);
+    if (!raw) {
+      restoredDraftRef.current = true;
+      return;
+    }
+
+    try {
+      const draft = JSON.parse(raw) as {
+        step?: Step;
+        grantCode?: string;
+        selectedCourseIds?: number[];
+        quizResult?: QuizResult | null;
+        requestCodeWhatsappUrl?: string | null;
+        registrationDraft?: RegistrationDraft;
+      };
+
+      if (draft.grantCode) {
+        setGrantCode(draft.grantCode);
+        const fallback = (DEFAULT_GRANT_CODES as Record<string, Omit<GrantCode, 'code'>>)[draft.grantCode];
+        if (fallback) {
+          setGrantData({ code: draft.grantCode, ...fallback });
+        }
+      }
+
+      if (draft.selectedCourseIds?.length) {
+        setSelectedCourses(courses.filter((course) => draft.selectedCourseIds?.includes(course.id)));
+      }
+
+      if (draft.quizResult) {
+        setQuizResult(draft.quizResult);
+      }
+
+      if (draft.requestCodeWhatsappUrl) {
+        setRequestCodeWhatsappUrl(draft.requestCodeWhatsappUrl);
+      }
+
+      if (draft.registrationDraft) {
+        setRegistrationDraft(draft.registrationDraft);
+      }
+
+      if (draft.step && draft.step !== 'success') {
+        setStep(draft.step);
+      }
+    } catch {
+      // Ignore malformed drafts and continue with a clean flow.
+    }
+
+    restoredDraftRef.current = true;
+  }, [courses]);
+
+  useEffect(() => {
+    if (!APP_FEATURES.progressDraft || typeof window === 'undefined' || !restoredDraftRef.current) {
+      return;
+    }
+
+    if (registrationData || step === 'success') {
+      window.localStorage.removeItem(FLOW_DRAFT_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(
+      FLOW_DRAFT_KEY,
+      JSON.stringify({
+        step,
+        grantCode,
+        selectedCourseIds: selectedCourses.map((course) => course.id),
+        quizResult,
+        requestCodeWhatsappUrl,
+        registrationDraft,
+      })
+    );
+  }, [step, grantCode, selectedCourses, quizResult, requestCodeWhatsappUrl, registrationDraft, registrationData]);
+
+  useEffect(() => {
+    if (!APP_FEATURES.lightweightAnalytics) {
+      return;
+    }
+
+    trackEvent('step_view', {
+      step,
+      selectedCourses: selectedCourses.map((course) => course.id),
+      hasGrant: Boolean(grantCode),
+    });
+  }, [step, selectedCourses, grantCode]);
+
   const verifyGrantCode = async (code: string) => {
     const normalizedCode = code.trim().toUpperCase();
     let result: Awaited<ReturnType<typeof verifyGrantCodeAction>>;
@@ -89,6 +209,7 @@ export default function Home() {
     try {
       result = await verifyGrantCodeAction(normalizedCode);
     } catch {
+      trackEvent('grant_verify_error', { code: normalizedCode });
       return {
         success: false,
         error: lang === 'ar' ? 'حدث خطأ أثناء التحقق. حاول مرة أخرى.' : 'Something went wrong while verifying. Please try again.',
@@ -96,6 +217,7 @@ export default function Home() {
     }
 
     if (!result.success || !result.data) {
+      trackEvent('grant_verify_failed', { code: normalizedCode });
       return {
         success: false,
         error: lang === 'ar' ? 'الكود غير صحيح أو غير مفعل' : 'Invalid or inactive code',
@@ -106,6 +228,7 @@ export default function Home() {
     setGrantData(verifiedGrant);
     setGrantCode(verifiedGrant.code);
     setStep('courses');
+    trackEvent('grant_verified', { code: verifiedGrant.code });
 
     return {
       success: true,
@@ -153,6 +276,7 @@ export default function Home() {
   const handleCourseToggle = (course: Course) => {
     setSelectedCourses(prev => {
       const exists = prev.find(c => c.id === course.id);
+      trackEvent(exists ? 'course_removed' : 'course_added', { courseId: course.id });
       if (exists) {
         return prev.filter(c => c.id !== course.id);
       }
@@ -164,10 +288,23 @@ export default function Home() {
     setQuizResult(result);
     setSelectedCourses(courses.filter((course) => result.recommendedCourseIds.includes(course.id)));
     setStep('code');
+    trackEvent('quiz_completed', { recommendedCourseIds: result.recommendedCourseIds });
   };
 
   const handleApplyBundle = (bundle: LearningBundle) => {
     setSelectedCourses(courses.filter((course) => bundle.courseIds.includes(course.id)));
+    trackEvent('bundle_applied', { bundleId: bundle.id, courseIds: bundle.courseIds });
+  };
+
+  const handleAddSuggestedCourse = (course: Course) => {
+    setSelectedCourses((prev) => {
+      if (prev.some((selected) => selected.id === course.id)) {
+        return prev;
+      }
+
+      return [...prev, course];
+    });
+    trackEvent('smart_basket_accept', { courseId: course.id });
   };
 
   const handleRegistration = async (data: { fullName: string; phone: string; age: number }) => {
@@ -193,11 +330,21 @@ export default function Home() {
       ...data,
       registrationCode: result.data.registration_code,
     });
+    trackEvent('registration_completed', {
+      selectedCourses: selectedCourses.map((course) => course.id),
+      total: calculations.total,
+    });
     setStep('success');
   };
 
   const handleCodeRequestCreated = (whatsappUrl: string) => {
     setRequestCodeWhatsappUrl(whatsappUrl);
+    trackEvent('code_request_whatsapp_created');
+  };
+
+  const handleStartFlow = () => {
+    trackEvent('hero_cta_clicked', { variant: heroVariant });
+    setStep('quiz');
   };
 
   const resetFlow = () => {
@@ -206,8 +353,18 @@ export default function Home() {
     setGrantData(null);
     setSelectedCourses([]);
     setQuizResult(null);
+    setRegistrationDraft({
+      fullName: '',
+      phone: '',
+      age: '',
+      agreed: false,
+    });
     setRegistrationData(null);
     setRequestCodeWhatsappUrl(null);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(FLOW_DRAFT_KEY);
+    }
+    trackEvent('flow_reset');
   };
 
   const calculations = calculateTotal();
@@ -216,6 +373,12 @@ export default function Home() {
   const currentGrantData = grantData || (grantCode && fallbackGrantCodes[grantCode]
     ? { code: grantCode, ...fallbackGrantCodes[grantCode] }
     : null);
+  const supportWhatsappUrl = buildWhatsappLink(
+    SUPPORT_WHATSAPP_NUMBER,
+    lang === 'ar'
+      ? 'مرحباً، أحتاج مساعدة بخصوص التسجيل أو اختيار الكورسات داخل مبادرة ذات.'
+      : 'Hello, I need help with registration or choosing courses inside the ZAT initiative.'
+  );
 
   return (
     <div className="page-shell min-h-screen flex flex-col bg-background/70 text-foreground transition-colors">
@@ -244,7 +407,8 @@ export default function Home() {
             {step === 'hero' && (
               <Hero 
                 lang={lang} 
-                onStart={() => setStep('quiz')} 
+                onStart={handleStartFlow}
+                experimentVariant={heroVariant}
               />
             )}
 
@@ -254,6 +418,7 @@ export default function Home() {
                 onBack={() => setStep('hero')}
                 onSkip={() => {
                   setQuizResult(null);
+                  trackEvent('quiz_skipped');
                   setStep('code');
                 }}
                 onComplete={handleQuizComplete}
@@ -268,6 +433,7 @@ export default function Home() {
                 onSkip={() => {
                   setGrantData(null);
                   setGrantCode('');
+                  trackEvent('grant_step_skipped');
                   setStep('courses');
                 }}
                 onCodeRequestCreated={handleCodeRequestCreated}
@@ -294,11 +460,14 @@ export default function Home() {
             {step === 'basket' && (
               <Basket
                 lang={lang}
+                allCourses={courses}
                 selectedCourses={selectedCourses}
                 grantData={currentGrantData}
                 calculations={calculations}
                 onBack={() => setStep('courses')}
                 onContinue={() => setStep('form')}
+                onAddSuggestedCourse={handleAddSuggestedCourse}
+                supportWhatsappUrl={supportWhatsappUrl}
               />
             )}
             
@@ -311,6 +480,9 @@ export default function Home() {
                 calculations={calculations}
                 onBack={() => setStep('basket')}
                 onSubmit={handleRegistration}
+                draftData={registrationDraft}
+                onDraftChange={setRegistrationDraft}
+                supportWhatsappUrl={supportWhatsappUrl}
               />
             )}
             
@@ -330,7 +502,15 @@ export default function Home() {
 
       <footer className="border-t border-border/70 bg-card/50 py-6 backdrop-blur-xl">
         <div className="container mx-auto px-4 text-center text-xs font-bold text-muted-foreground md:text-sm">
-          {lang === 'ar' ? '© 2024 مبادرة ذات - جميع الحقوق محفوظة' : '© 2024 ZAT Initiative - All Rights Reserved'}
+          <div className="mb-3 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/privacy" className="hover:text-primary transition-colors">{lang === 'ar' ? 'الخصوصية' : 'Privacy'}</Link>
+            <Link href="/terms" className="hover:text-primary transition-colors">{lang === 'ar' ? 'الشروط' : 'Terms'}</Link>
+            <Link href="/refund-support" className="hover:text-primary transition-colors">{lang === 'ar' ? 'الاسترجاع والدعم' : 'Refund & Support'}</Link>
+            <Link href="/payment-security" className="hover:text-primary transition-colors">{lang === 'ar' ? 'الدفع والأمان' : 'Payment & Security'}</Link>
+          </div>
+          <div>
+            {lang === 'ar' ? '© 2024 مبادرة ذات - جميع الحقوق محفوظة' : '© 2024 ZAT Initiative - All Rights Reserved'}
+          </div>
         </div>
       </footer>
     </div>
