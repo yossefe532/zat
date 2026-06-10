@@ -72,8 +72,8 @@
   --color-destructive: var(--destructive);
   --color-light-bg: var(--light-bg);
   --color-text-gray: var(--text-gray);
-  --font-sans: var(--font-initiative);
-  --font-display: var(--font-initiative);
+  --font-sans: var(--font-initiative-body);
+  --font-display: var(--font-initiative-display);
 }
 
 * {
@@ -96,6 +96,14 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+input,
+textarea,
+select,
+button,
+label {
+  font: inherit;
 }
 
 body::before,
@@ -137,7 +145,7 @@ footer {
   position: relative;
 }
 
-h1, h2, h3, h4, h5, h6, p, span, button, input, textarea, label, select, .title-font {
+h1, h2, h3, h4, h5, h6, .title-font {
   font-family: var(--font-display) !important;
 }
 

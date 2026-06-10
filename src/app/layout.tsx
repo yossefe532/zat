@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
+import { Alexandria } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const initiativeFont = localFont({
+const bodyFont = Alexandria({
+  subsets: ["arabic"],
+  variable: "--font-initiative-body",
+  display: "swap",
+});
+
+const displayFont = localFont({
   src: "../../Abdoullah-Ashgar-EL-kharef.ttf",
-  variable: "--font-initiative",
+  variable: "--font-initiative-display",
   display: "swap",
 });
 
@@ -20,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="h-full">
-      <body className={`${initiativeFont.variable} font-sans min-h-screen flex flex-col antialiased`}>
+      <body className={`${bodyFont.variable} ${displayFont.variable} font-sans min-h-screen flex flex-col antialiased`}>
         {children}
       </body>
     </html>
