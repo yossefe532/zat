@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Alexandria } from "next/font/google";
-import localFont from "next/font/local";
+import { Noto_Kufi_Arabic } from "next/font/google";
 import "./globals.css";
 
-const bodyFont = Alexandria({
+const kufaFont = Noto_Kufi_Arabic({
   subsets: ["arabic"],
   variable: "--font-initiative-body",
   display: "swap",
-});
-
-const displayFont = localFont({
-  src: "../../Abdoullah-Ashgar-EL-kharef.ttf",
-  variable: "--font-initiative-display",
-  display: "swap",
+  weight: ["400", "500", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -27,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="h-full">
-      <body className={`${bodyFont.className} ${bodyFont.variable} ${displayFont.variable} min-h-screen flex flex-col antialiased`}>
+      <body className={`${kufaFont.className} ${kufaFont.variable} min-h-screen flex flex-col antialiased`}>
         {children}
       </body>
     </html>

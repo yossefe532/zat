@@ -72,7 +72,7 @@
   --color-destructive: var(--destructive);
   --color-light-bg: var(--light-bg);
   --color-text-gray: var(--text-gray);
-  --font-display: var(--font-initiative-display);
+  --font-display: var(--font-initiative-body);
 }
 
 * {
