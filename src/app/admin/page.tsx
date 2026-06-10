@@ -165,6 +165,56 @@ export default function AdminPage() {
     }
   }
 
+  async function handleUpdateEmployee(
+    employeeId: string,
+    payload: {
+      fullName: string;
+      whatsappNumber: string;
+      defaultCodeValidityDays: number;
+      staffCode: string;
+      loginIdentifier: string;
+      isActive: boolean;
+    },
+  ) {
+    try {
+      setBusyEmployeeId(employeeId);
+      setError(null);
+      const response = await fetch(`/api/employees/${employeeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      await parseResponse(response);
+      await loadDashboard();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'تعذر تحديث الكود');
+    } finally {
+      setBusyEmployeeId(null);
+    }
+  }
+
+  async function handleDeleteEmployee(employeeId: string) {
+    if (!window.confirm('هل تريد حذف هذا الكود نهائيًا؟ سيتم منعه من الاستخدام إن لم يكن مرتبطًا بسجلات.')) {
+      return;
+    }
+
+    try {
+      setBusyEmployeeId(employeeId);
+      setError(null);
+      const response = await fetch(`/api/employees/${employeeId}`, {
+        method: 'DELETE',
+      });
+
+      await parseResponse(response);
+      await loadDashboard();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'تعذر حذف الكود');
+    } finally {
+      setBusyEmployeeId(null);
+    }
+  }
+
   async function handleRunBackup() {
     try {
       setBackupBusy(true);
@@ -398,9 +448,13 @@ export default function AdminPage() {
 
         <EmployeeManagementPanel
           employees={overview.employees}
+          auditLogs={overview.auditLogs}
+          students={overview.students}
           latestCredentials={latestCredentials}
           onCreate={(payload) => void handleCreateEmployee(payload)}
           onToggleStatus={(employeeId, isActive) => void handleToggleEmployee(employeeId, isActive)}
+          onUpdate={(employeeId, payload) => void handleUpdateEmployee(employeeId, payload)}
+          onDelete={(employeeId) => void handleDeleteEmployee(employeeId)}
           busyEmployeeId={busyEmployeeId}
         />
 

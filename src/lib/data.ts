@@ -86,6 +86,12 @@ export const DEFAULT_GRANT_CODES = {
     whatsappNumber: '201029398592',
     isActive: true
   },
+  'Y.E4U': {
+    nameAr: 'منحة يوسف',
+    nameEn: 'Yousef Grant',
+    whatsappNumber: '201029398592',
+    isActive: true
+  },
   'S.EDU': {
     nameAr: 'منحة سما',
     nameEn: 'Sama Grant',

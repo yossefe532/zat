@@ -36,6 +36,7 @@ type EmployeeRow = {
   login_identifier: string;
   default_code_validity_days: number;
   is_active: boolean;
+  created_by: string | null;
   created_at: string;
 };
 
@@ -107,6 +108,7 @@ export type EmployeeSummary = {
   loginIdentifier: string;
   defaultCodeValidityDays: number;
   isActive: boolean;
+  createdBy: string | null;
   createdAt: string;
 };
 
@@ -356,6 +358,7 @@ function mapEmployee(row: EmployeeRow): EmployeeSummary {
     loginIdentifier: row.login_identifier,
     defaultCodeValidityDays: row.default_code_validity_days,
     isActive: row.is_active,
+    createdBy: row.created_by,
     createdAt: row.created_at,
   };
 }
@@ -531,7 +534,7 @@ export async function listEmployees() {
   const supabase = requireServiceSupabaseClient();
   const { data, error } = await supabase
     .from('employees')
-    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_at')
+    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_by, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -566,7 +569,7 @@ export async function createEmployee(
   const { data, error } = await supabase
     .from('employees')
     .insert([payload])
-    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_at')
+    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_by, created_at')
     .single<EmployeeRow>();
 
   if (error || !data) {
@@ -594,7 +597,7 @@ export async function updateEmployeeStatus(
     .from('employees')
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq('id', employeeId)
-    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_at')
+    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_by, created_at')
     .single<EmployeeRow>();
 
   if (error || !data) {
@@ -603,6 +606,97 @@ export async function updateEmployeeStatus(
 
   await logAudit(actor, 'toggle_employee_status', 'employees', employeeId, { isActive });
   return mapEmployee(data);
+}
+
+export async function updateEmployee(
+  employeeId: string,
+  input: {
+    fullName: string;
+    whatsappNumber: string;
+    defaultCodeValidityDays: number;
+    staffCode: string;
+    loginIdentifier: string;
+    isActive: boolean;
+  },
+  actor: SessionActor,
+) {
+  if (actor.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+
+  const supabase = requireServiceSupabaseClient();
+  const normalizedPhone = normalizePhoneNumber(input.whatsappNumber);
+  const { data, error } = await supabase
+    .from('employees')
+    .update({
+      full_name: input.fullName.trim(),
+      whatsapp_encrypted: encryptText(normalizedPhone),
+      whatsapp_hash: hashValue(normalizedPhone),
+      whatsapp_last4: normalizedPhone.slice(-4),
+      staff_code: input.staffCode.trim().toUpperCase(),
+      login_identifier: input.loginIdentifier.trim(),
+      default_code_validity_days: input.defaultCodeValidityDays,
+      is_active: input.isActive,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', employeeId)
+    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_by, created_at')
+    .single<EmployeeRow>();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? 'تعذر تحديث الكود');
+  }
+
+  await logAudit(actor, 'update_employee_code', 'employees', employeeId, {
+    fullName: data.full_name,
+    staffCode: data.staff_code,
+    loginIdentifier: data.login_identifier,
+    isActive: data.is_active,
+    whatsappLast4: data.whatsapp_last4,
+  });
+
+  return mapEmployee(data);
+}
+
+export async function deleteEmployee(employeeId: string, actor: SessionActor) {
+  if (actor.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+
+  const supabase = requireServiceSupabaseClient();
+  const { count, error: countError } = await supabase
+    .from('student_records')
+    .select('id', { count: 'exact', head: true })
+    .eq('employee_id', employeeId);
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  if ((count ?? 0) > 0) {
+    throw new Error('لا يمكن حذف الكود لارتباطه بطلبات أو سجلات طلاب حالية');
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('employees')
+    .select('staff_code, full_name')
+    .eq('id', employeeId)
+    .maybeSingle<{ staff_code: string; full_name: string }>();
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  const { error } = await supabase.from('employees').delete().eq('id', employeeId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logAudit(actor, 'delete_employee_code', 'employees', employeeId, {
+    staffCode: existing?.staff_code ?? null,
+    fullName: existing?.full_name ?? null,
+  });
 }
 
 async function resolveSelectedCourses(courseIds: number[]) {

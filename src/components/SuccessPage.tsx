@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageCircle, Copy, RefreshCw, Home, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Copy, RefreshCw, Home, ShieldCheck, Sparkles } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { buildWhatsappLink, formatPrice } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -20,6 +20,8 @@ interface SuccessPageProps {
     firstInstallment: number;
     secondInstallment: number;
   };
+  suggestedNextCourse?: Course | null;
+  supportWhatsappUrl: string;
   onReset: () => void;
 }
 
@@ -29,6 +31,8 @@ export function SuccessPage({
   selectedCourses,
   grantData,
   calculations,
+  suggestedNextCourse,
+  supportWhatsappUrl,
   onReset
 }: SuccessPageProps) {
   const isAr = lang === 'ar';
@@ -170,6 +174,35 @@ Payment Details:
                 : `Alert: Code valid for 3 days! Expires on ${expiryDay}, ${expiryDateStr}`}
             </p>
           </div>
+
+          {suggestedNextCourse && (
+            <div className="metric-card rounded-[1.6rem] p-5 text-right">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card/70 px-4 py-2 text-xs font-black text-primary shadow-sm backdrop-blur-md md:text-sm">
+                    <Sparkles className="h-4 w-4" />
+                    {isAr ? 'الخطوة التالية المقترحة لك' : 'Your recommended next step'}
+                  </div>
+                  <h3 className="text-lg font-black text-primary md:text-xl">
+                    {isAr
+                      ? `بعد تأكيد الحجز، ${suggestedNextCourse.nameAr} هو أقرب كورس يكمل مسارك`
+                      : `After confirming, ${suggestedNextCourse.nameEn} is the best course to complete your path`}
+                  </h3>
+                  <p className="text-sm font-bold leading-7 text-muted-foreground md:text-base">
+                    {isAr
+                      ? 'هذه ليست خطوة إجبارية الآن، لكنها أفضل ترشيح لاحق إذا أردت توسيع المسار بعد إنهاء الحجز الحالي.'
+                      : 'This is not required now, but it is the best follow-up recommendation if you want to expand your path after confirming your current booking.'}
+                  </p>
+                </div>
+                <div className="rounded-[1.4rem] border border-primary/15 bg-primary/8 px-5 py-4 text-center md:min-w-[15rem]">
+                  <p className="text-2xl">{suggestedNextCourse.icon}</p>
+                  <p className="mt-2 text-base font-black text-foreground md:text-lg">
+                    {isAr ? suggestedNextCourse.nameAr : suggestedNextCourse.nameEn}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="space-y-6 pt-4">
             <a
@@ -181,6 +214,18 @@ Payment Details:
               <MessageCircle className="w-6 h-6" />
               {isAr ? 'تأكيد الحجز عبر واتساب' : 'Confirm via WhatsApp'}
             </a>
+
+            {suggestedNextCourse && (
+              <a
+                href={supportWhatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="action-secondary inline-flex w-full items-center justify-center gap-3 rounded-[1.5rem] py-4 text-base font-black text-primary hover:border-primary/35 hover:bg-primary/5"
+              >
+                <Sparkles className="h-5 w-5" />
+                {isAr ? 'اسأل عن إضافة هذا الكورس لاحقًا' : 'Ask about adding this course later'}
+              </a>
+            )}
             
             <div className="flex flex-col sm:flex-row gap-4">
               <button

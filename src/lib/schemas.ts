@@ -15,6 +15,15 @@ export const createEmployeeSchema = z.object({
   defaultCodeValidityDays: z.coerce.number().int().min(1).max(365).default(7),
 });
 
+export const updateEmployeeSchema = z.object({
+  fullName: z.string().trim().min(3, 'اسم الموظف مطلوب'),
+  whatsappNumber: z.string().trim().min(10, 'رقم الواتساب غير صالح'),
+  defaultCodeValidityDays: z.coerce.number().int().min(1).max(365),
+  staffCode: z.string().trim().min(3, 'كود الموظف مطلوب'),
+  loginIdentifier: z.string().trim().min(3, 'معرّف الدخول مطلوب'),
+  isActive: z.coerce.boolean(),
+});
+
 export const createStudentSchema = z.object({
   fullName: z.string().trim().min(3, 'اسم الطالب مطلوب'),
   phone: z.string().trim().min(10, 'رقم الهاتف غير صالح'),

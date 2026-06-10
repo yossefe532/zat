@@ -5,12 +5,14 @@ import { DISCOUNT_RULES, SMART_BUNDLES } from '@/lib/data';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import type { QuizResult } from '@/components/PathQuiz';
 
 interface BasketProps {
   lang: 'ar' | 'en';
   allCourses: Course[];
   selectedCourses: Course[];
   grantData: { nameAr: string; nameEn: string } | null;
+  quizResult?: QuizResult | null;
   calculations: {
     subtotal: number;
     discount: number;
@@ -29,6 +31,7 @@ export function Basket({
   allCourses,
   selectedCourses,
   grantData,
+  quizResult,
   calculations,
   onBack,
   onContinue,
@@ -59,9 +62,15 @@ export function Basket({
     .filter((entry) => entry.matchedCount > 0 && entry.missingCourseIds.length > 0)
     .sort((a, b) => b.matchedCount - a.matchedCount)[0];
 
-  const suggestedCourse = suggestedBundle
-    ? allCourses.find((course) => course.id === suggestedBundle.missingCourseIds[0]) ?? null
-    : null;
+  const quizSuggestedCourseId = quizResult?.recommendedCourseIds.find(
+    (courseId) => !selectedCourses.some((course) => course.id === courseId)
+  );
+
+  const suggestedCourse = quizSuggestedCourseId
+    ? allCourses.find((course) => course.id === quizSuggestedCourseId) ?? null
+    : suggestedBundle
+      ? allCourses.find((course) => course.id === suggestedBundle.missingCourseIds[0]) ?? null
+      : null;
 
   const suggestedCoursePrice = suggestedCourse
     ? (grantData ? suggestedCourse.grantPrice : suggestedCourse.originalPrice)
@@ -120,17 +129,27 @@ export function Basket({
               <div className="space-y-3 md:max-w-xl">
                 <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card/70 px-4 py-2 text-xs font-black text-primary shadow-sm backdrop-blur-md md:text-sm">
                   <Sparkles className="h-4 w-4" />
-                  {isAr ? 'اقتراح ذكي لرفع قيمة اختيارك' : 'Smart suggestion to improve your selection'}
+                  {quizSuggestedCourseId
+                    ? (isAr ? 'اقتراح مخصص حسب نتيجة الاختبار' : 'Personalized suggestion from your quiz')
+                    : (isAr ? 'اقتراح ذكي لرفع قيمة اختيارك' : 'Smart suggestion to improve your selection')}
                 </div>
                 <h3 className="text-lg font-black text-primary md:text-xl">
-                  {isAr
-                    ? `أضف ${suggestedCourse.nameAr} لتقترب من ${suggestedBundle.bundle.nameAr}`
-                    : `Add ${suggestedCourse.nameEn} to move closer to ${suggestedBundle.bundle.nameEn}`}
+                  {quizSuggestedCourseId
+                    ? (isAr
+                      ? `أضف ${suggestedCourse.nameAr} لأنه الأقرب لنتيجة مسارك الحالية`
+                      : `Add ${suggestedCourse.nameEn} because it best matches your recommended path`)
+                    : (isAr
+                      ? `أضف ${suggestedCourse.nameAr} لتقترب من ${suggestedBundle.bundle.nameAr}`
+                      : `Add ${suggestedCourse.nameEn} to move closer to ${suggestedBundle.bundle.nameEn}`)}
                 </h3>
                 <p className="text-sm font-bold leading-7 text-muted-foreground md:text-base">
-                  {isAr
-                    ? `بمجرد إضافة هذا الكورس سترفع قيمة المسار الحالي وتقترب من خصم يصل إلى ${suggestedBundle.bundle.extraDiscount} جنيه داخل هذه الباقة.`
-                    : `Adding this course strengthens your current path and moves you toward a bundle discount of up to ${suggestedBundle.bundle.extraDiscount} EGP.`}
+                  {quizSuggestedCourseId
+                    ? (isAr
+                      ? 'هذا الاقتراح مبني على هدفك ووقتك وطريقة التعلم التي اخترتها في الاختبار، لذلك هو الأنسب لتقوية اختيارك الحالي.'
+                      : 'This suggestion is based on your goal, time, and learning style from the quiz, making it the strongest next addition.')
+                    : (isAr
+                      ? `بمجرد إضافة هذا الكورس سترفع قيمة المسار الحالي وتقترب من خصم يصل إلى ${suggestedBundle.bundle.extraDiscount} جنيه داخل هذه الباقة.`
+                      : `Adding this course strengthens your current path and moves you toward a bundle discount of up to ${suggestedBundle.bundle.extraDiscount} EGP.`)}
                 </p>
               </div>
               <div className="metric-card rounded-[1.4rem] p-4 text-center md:min-w-[15rem]">

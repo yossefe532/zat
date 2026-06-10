@@ -307,6 +307,34 @@ export default function Home() {
     trackEvent('smart_basket_accept', { courseId: course.id });
   };
 
+  const getSuggestedNextCourse = () => {
+    const selectedIds = selectedCourses.map((course) => course.id);
+
+    const quizSuggested = quizResult?.recommendedCourseIds.find((courseId) => !selectedIds.includes(courseId));
+    if (quizSuggested) {
+      return courses.find((course) => course.id === quizSuggested) ?? null;
+    }
+
+    const bundleGapCourseId = SMART_BUNDLES
+      .map((bundle) => {
+        const missingCourseIds = bundle.courseIds.filter((courseId) => !selectedIds.includes(courseId));
+        const matchedCount = bundle.courseIds.length - missingCourseIds.length;
+
+        return {
+          missingCourseIds,
+          matchedCount,
+        };
+      })
+      .filter((entry) => entry.matchedCount > 0 && entry.missingCourseIds.length > 0)
+      .sort((a, b) => b.matchedCount - a.matchedCount)[0]?.missingCourseIds[0];
+
+    if (bundleGapCourseId) {
+      return courses.find((course) => course.id === bundleGapCourseId) ?? null;
+    }
+
+    return courses.find((course) => !selectedIds.includes(course.id)) ?? null;
+  };
+
   const handleRegistration = async (data: { fullName: string; phone: string; age: number }) => {
     const calculations = calculateTotal();
     const payload: RegistrationInput = {
@@ -379,6 +407,7 @@ export default function Home() {
       ? 'مرحباً، أحتاج مساعدة بخصوص التسجيل أو اختيار الكورسات داخل مبادرة ذات.'
       : 'Hello, I need help with registration or choosing courses inside the ZAT initiative.'
   );
+  const suggestedNextCourse = getSuggestedNextCourse();
 
   return (
     <div className="page-shell min-h-screen flex flex-col bg-background/70 text-foreground transition-colors">
@@ -463,6 +492,7 @@ export default function Home() {
                 allCourses={courses}
                 selectedCourses={selectedCourses}
                 grantData={currentGrantData}
+                quizResult={quizResult}
                 calculations={calculations}
                 onBack={() => setStep('courses')}
                 onContinue={() => setStep('form')}
@@ -493,6 +523,8 @@ export default function Home() {
                 selectedCourses={selectedCourses}
                 grantData={currentGrantData}
                 calculations={calculations}
+                suggestedNextCourse={suggestedNextCourse}
+                supportWhatsappUrl={supportWhatsappUrl}
                 onReset={resetFlow}
               />
             )}
