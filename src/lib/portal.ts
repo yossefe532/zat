@@ -1127,3 +1127,457 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     },
   };
 }
+
+type ReferralCodeRow = {
+  id: string;
+  code: string;
+  owner_registration_id: string;
+  root_referral_code: string;
+  root_grant_code_used: string;
+  root_whatsapp_number: string;
+  is_active: boolean;
+  created_at: string;
+};
+
+type ReferralBenefitRow = {
+  id: string;
+  owner_registration_id: string;
+  milestone: number;
+  benefit_type: 'discount_total' | 'free_course';
+  benefit_value: number | string;
+  is_consumed: boolean;
+  created_at: string;
+  consumed_at: string | null;
+};
+
+type ReferralRequestRow = {
+  id: string;
+  owner_registration_id: string;
+  milestone: number;
+  target_whatsapp_number: string;
+  message: string;
+  status: 'requested' | 'sent' | 'cancelled';
+  created_at: string;
+};
+
+type RegistrationAccessRow = {
+  id: string;
+  full_name: string;
+  phone: string;
+  grant_code_used: string | null;
+  referral_code_used: string | null;
+};
+
+export type ReferralMilestoneStatus = {
+  milestone: 1 | 3 | 5;
+  achieved: boolean;
+  claimable: boolean;
+  benefit?: {
+    id: string;
+    type: 'discount_total' | 'free_course';
+    value: number;
+    isConsumed: boolean;
+  } | null;
+};
+
+export type ReferralDashboard = {
+  referralCode: string;
+  shareTextAr: string;
+  shareTextEn: string;
+  directCount: number;
+  tierProgressCount: number;
+  milestones: ReferralMilestoneStatus[];
+  grantOwnerWhatsapp: string;
+  grantCodeUsed: string;
+};
+
+function sanitizeReferralCodeCandidate(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+async function getGrantOwnerWhatsappByCode(code: string) {
+  const supabase = requireServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from('grant_codes')
+    .select('whatsapp_number')
+    .eq('code', code)
+    .limit(1);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const row = (data?.[0] ?? null) as { whatsapp_number?: string } | null;
+  return row?.whatsapp_number ?? null;
+}
+
+async function getRegistrationAccessRow(registrationId: string) {
+  const supabase = requireServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from('registrations')
+    .select('id, full_name, phone, grant_code_used, referral_code_used')
+    .eq('id', registrationId)
+    .maybeSingle<RegistrationAccessRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error('NOT_FOUND');
+  }
+
+  if (!data.grant_code_used) {
+    throw new Error('FORBIDDEN');
+  }
+
+  return data;
+}
+
+async function getReferralCodeRowByCode(code: string) {
+  const supabase = requireServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from('referral_codes')
+    .select('id, code, owner_registration_id, root_referral_code, root_grant_code_used, root_whatsapp_number, is_active, created_at')
+    .eq('code', code)
+    .eq('is_active', true)
+    .maybeSingle<ReferralCodeRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? null;
+}
+
+async function getReferralCodeRowByOwner(registrationId: string) {
+  const supabase = requireServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from('referral_codes')
+    .select('id, code, owner_registration_id, root_referral_code, root_grant_code_used, root_whatsapp_number, is_active, created_at')
+    .eq('owner_registration_id', registrationId)
+    .limit(1);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data?.[0] ?? null) as ReferralCodeRow | null) ?? null;
+}
+
+function createReferralCodeCandidate() {
+  const seed = sanitizeReferralCodeCandidate(randomToken(6)).slice(0, 8);
+  return `ZAT${seed}`;
+}
+
+export async function getOrCreateReferralCode(registrationId: string) {
+  const existing = await getReferralCodeRowByOwner(registrationId);
+  if (existing) {
+    return existing;
+  }
+
+  const registration = await getRegistrationAccessRow(registrationId);
+  const grantCodeUsed = registration.grant_code_used ?? '';
+  const grantOwnerWhatsapp = (await getGrantOwnerWhatsappByCode(grantCodeUsed)) ?? '';
+  const referredByCode = registration.referral_code_used?.trim().toUpperCase() ?? '';
+  const referredByRow = referredByCode ? await getReferralCodeRowByCode(referredByCode) : null;
+  const inheritedRoot = referredByRow?.root_referral_code ?? (referredByCode || null);
+  const supabase = requireServiceSupabaseClient();
+
+  for (let attempt = 0; attempt < 18; attempt += 1) {
+    const candidate = createReferralCodeCandidate();
+    const rootReferral = inheritedRoot ?? candidate;
+    const { data, error } = await supabase
+      .from('referral_codes')
+      .insert([{
+        code: candidate,
+        owner_registration_id: registrationId,
+        root_referral_code: rootReferral,
+        root_grant_code_used: grantCodeUsed,
+        root_whatsapp_number: grantOwnerWhatsapp,
+        is_active: true,
+      }])
+      .select('id, code, owner_registration_id, root_referral_code, root_grant_code_used, root_whatsapp_number, is_active, created_at')
+      .single<ReferralCodeRow>();
+
+    if (!error && data) {
+      return data;
+    }
+  }
+
+  throw new Error('تعذر إنشاء كود إحالة فريد');
+}
+
+async function countReferralEvents(filter: { referralCodeUsed?: string; rootReferralCode?: string }) {
+  const supabase = requireServiceSupabaseClient();
+  let query = supabase
+    .from('referral_events')
+    .select('id', { count: 'exact', head: true });
+
+  if (filter.referralCodeUsed) {
+    query = query.eq('referral_code_used', filter.referralCodeUsed);
+  }
+
+  if (filter.rootReferralCode) {
+    query = query.eq('root_referral_code', filter.rootReferralCode);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return count ?? 0;
+}
+
+async function getBenefitsForOwner(registrationId: string) {
+  const supabase = requireServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from('referral_benefits')
+    .select('id, owner_registration_id, milestone, benefit_type, benefit_value, is_consumed, created_at, consumed_at')
+    .eq('owner_registration_id', registrationId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as ReferralBenefitRow[];
+}
+
+const referralMilestones: Array<{
+  milestone: 1 | 3 | 5;
+  benefitType: 'discount_total' | 'free_course';
+  benefitValue: number;
+}> = [
+  { milestone: 1, benefitType: 'discount_total', benefitValue: 50 },
+  { milestone: 3, benefitType: 'discount_total', benefitValue: 200 },
+  { milestone: 5, benefitType: 'free_course', benefitValue: 0 },
+];
+
+export async function getReferralDashboardForRegistrant(registrationId: string): Promise<ReferralDashboard> {
+  const referralCodeRow = await getOrCreateReferralCode(registrationId);
+  const registration = await getRegistrationAccessRow(registrationId);
+  const directCount = await countReferralEvents({ referralCodeUsed: referralCodeRow.code });
+  const rootCount = referralCodeRow.root_referral_code === referralCodeRow.code
+    ? await countReferralEvents({ rootReferralCode: referralCodeRow.code })
+    : 0;
+  const tierProgressCount = referralCodeRow.root_referral_code === referralCodeRow.code ? rootCount : directCount;
+  const benefits = await getBenefitsForOwner(registrationId);
+  const grantCodeUsed = registration.grant_code_used ?? '';
+  const grantOwnerWhatsapp = (await getGrantOwnerWhatsappByCode(grantCodeUsed)) ?? referralCodeRow.root_whatsapp_number;
+
+  const milestones = referralMilestones.map((config) => {
+    const existingBenefit = benefits.find((benefit) => benefit.milestone === config.milestone) ?? null;
+    const achieved = tierProgressCount >= config.milestone;
+    const claimable = achieved && !existingBenefit;
+
+    return {
+      milestone: config.milestone,
+      achieved,
+      claimable,
+      benefit: existingBenefit
+        ? {
+          id: existingBenefit.id,
+          type: existingBenefit.benefit_type,
+          value: Number(existingBenefit.benefit_value ?? 0),
+          isConsumed: existingBenefit.is_consumed,
+        }
+        : null,
+    };
+  });
+
+  return {
+    referralCode: referralCodeRow.code,
+    shareTextAr: 'شارك المنحة واحصل على خصم 50 جنيهًا أنت وصديقك على إجمالي سعر أي كورس',
+    shareTextEn: 'Share the grant and get 50 EGP off the total price for you and your friend on any course order.',
+    directCount,
+    tierProgressCount,
+    milestones,
+    grantOwnerWhatsapp,
+    grantCodeUsed,
+  };
+}
+
+export async function verifyReferralCodeForGrant(accessCode: string) {
+  const normalized = accessCode.trim().toUpperCase();
+  const row = await getReferralCodeRowByCode(normalized);
+  if (!row) {
+    return null;
+  }
+
+  return {
+    referralCodeUsed: row.code,
+    ownerRegistrationId: row.owner_registration_id,
+    rootReferralCode: row.root_referral_code,
+    rootGrantCodeUsed: row.root_grant_code_used,
+    rootWhatsappNumber: row.root_whatsapp_number,
+  };
+}
+
+export async function requestReferralMilestoneRedemption(
+  registrationId: string,
+  milestone: 1 | 3 | 5,
+) {
+  const dashboard = await getReferralDashboardForRegistrant(registrationId);
+  const milestoneStatus = dashboard.milestones.find((item) => item.milestone === milestone);
+  if (!milestoneStatus?.claimable) {
+    throw new Error('غير مؤهل لاسترداد هذه المكافأة');
+  }
+
+  const registration = await getRegistrationAccessRow(registrationId);
+  const supabase = requireServiceSupabaseClient();
+  const existingRequests = await supabase
+    .from('referral_redemption_requests')
+    .select('id')
+    .eq('owner_registration_id', registrationId)
+    .eq('milestone', milestone)
+    .limit(1);
+
+  if (existingRequests.error) {
+    throw new Error(existingRequests.error.message);
+  }
+
+  if ((existingRequests.data ?? []).length > 0) {
+    throw new Error('تم إرسال طلب الاسترداد لهذه المرحلة مسبقًا');
+  }
+
+  const benefitConfig = referralMilestones.find((item) => item.milestone === milestone);
+  if (!benefitConfig) {
+    throw new Error('مرحلة غير مدعومة');
+  }
+
+  let targetWhatsapp = dashboard.grantOwnerWhatsapp;
+  if (registration.referral_code_used) {
+    const referralOwner = await getReferralCodeRowByCode(registration.referral_code_used.trim().toUpperCase());
+    if (referralOwner) {
+      const { data: ownerRegistration, error: ownerError } = await supabase
+        .from('registrations')
+        .select('phone')
+        .eq('id', referralOwner.owner_registration_id)
+        .maybeSingle<{ phone: string }>();
+
+      if (ownerError) {
+        throw new Error(ownerError.message);
+      }
+
+      if (ownerRegistration?.phone) {
+        targetWhatsapp = ownerRegistration.phone;
+      }
+    }
+  }
+
+  const message = `مرحباً، أريد استرداد مكافأة الإحالة:
+الاسم: ${registration.full_name}
+الهاتف: ${registration.phone}
+كود التسجيل: ${dashboard.referralCode}
+عدد الإحالات المحتسبة: ${dashboard.tierProgressCount}
+المرحلة: ${milestone}
+المكافأة: ${
+    milestone === 1
+      ? 'خصم 50 جنيه على إجمالي سعر الطلب'
+      : milestone === 3
+        ? 'خصم 200 جنيه على إجمالي سعر الطلب'
+        : 'كورس مجاني (يُخصم قيمة كورس واحد من إجمالي الطلب)'
+  }
+`;
+
+  const { data: requestRow, error: requestError } = await supabase
+    .from('referral_redemption_requests')
+    .insert([{
+      owner_registration_id: registrationId,
+      milestone,
+      target_whatsapp_number: targetWhatsapp,
+      message,
+      status: 'requested',
+    }])
+    .select('id, owner_registration_id, milestone, target_whatsapp_number, message, status, created_at')
+    .single<ReferralRequestRow>();
+
+  if (requestError || !requestRow) {
+    throw new Error(requestError?.message ?? 'تعذر إنشاء طلب الاسترداد');
+  }
+
+  const { error: benefitError } = await supabase
+    .from('referral_benefits')
+    .insert([{
+      owner_registration_id: registrationId,
+      milestone,
+      benefit_type: benefitConfig.benefitType,
+      benefit_value: benefitConfig.benefitValue,
+      is_consumed: false,
+    }]);
+
+  if (benefitError) {
+    throw new Error(benefitError.message);
+  }
+
+  await logAudit({ role: 'system', subjectId: registrationId, fullName: registration.full_name }, 'request_referral_reward', 'referral_redemption_requests', requestRow.id, {
+    milestone,
+    referralCode: dashboard.referralCode,
+  });
+
+  return {
+    targetWhatsapp,
+    message,
+  };
+}
+
+export async function applyReferralBenefitsToTotal(ownerRegistrationId: string, courseIds: number[], total: number) {
+  const supabase = requireServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from('referral_benefits')
+    .select('id, milestone, benefit_type, benefit_value, is_consumed')
+    .eq('owner_registration_id', ownerRegistrationId)
+    .eq('is_consumed', false)
+    .order('milestone', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const benefit = (data?.[0] ?? null) as {
+    id: string;
+    milestone: number;
+    benefit_type: 'discount_total' | 'free_course';
+    benefit_value: number | string;
+    is_consumed: boolean;
+  } | null;
+
+  if (!benefit) {
+    return { total, benefitId: null, discountApplied: 0 };
+  }
+
+  let discount = 0;
+  if (benefit.benefit_type === 'discount_total') {
+    discount = Number(benefit.benefit_value ?? 0);
+  } else {
+    const selectedCourses = await resolveSelectedCourses(courseIds);
+    discount = selectedCourses.reduce((max, course) => Math.max(max, course.price), 0);
+  }
+
+  const nextTotal = Math.max(total - discount, 0);
+  const { error: consumeError } = await supabase
+    .from('referral_benefits')
+    .update({
+      is_consumed: true,
+      consumed_registration_id: ownerRegistrationId,
+      consumed_at: new Date().toISOString(),
+    })
+    .eq('id', benefit.id);
+
+  if (consumeError) {
+    throw new Error(consumeError.message);
+  }
+
+  await logAudit({ role: 'system', subjectId: ownerRegistrationId }, 'consume_referral_reward', 'referral_benefits', benefit.id, {
+    benefitType: benefit.benefit_type,
+    discount,
+    totalBefore: total,
+    totalAfter: nextTotal,
+  });
+
+  return { total: nextTotal, benefitId: benefit.id, discountApplied: discount };
+}

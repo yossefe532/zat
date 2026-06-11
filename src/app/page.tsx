@@ -3,13 +3,14 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BadgePercent } from 'lucide-react';
 import { buildWhatsappLink } from '@/lib/utils';
 import { COURSES, DEFAULT_GRANT_CODES, DISCOUNT_RULES, SMART_BUNDLES, SUPPORT_WHATSAPP_NUMBER } from '@/lib/data';
 import { Course, GrantCode, LearningBundle, RegistrationDraft, RegistrationInput, RegistrationRecord } from '@/lib/types';
 import type { QuizResult } from '@/components/PathQuiz';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
-import { submitRegistration, updateExistingRegistration, verifyGrantCodeAction } from '@/actions';
+import { submitRegistration, updateExistingRegistration, verifyAccessCodeAction } from '@/actions';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { APP_FEATURES } from '@/lib/feature-flags';
 import { trackEvent } from '@/lib/analytics';
@@ -21,6 +22,8 @@ const FLOW_DRAFT_KEY = 'zat_flow_draft_v1';
 type FlowDraftSnapshot = {
   step?: Step;
   grantCode?: string;
+  referralCodeUsed?: string | null;
+  referralDiscount?: number;
   selectedCourseIds?: number[];
   quizResult?: QuizResult | null;
   requestCodeWhatsappUrl?: string | null;
@@ -92,6 +95,8 @@ export default function Home() {
     return (localStorage.getItem('zat_theme') as 'light' | 'dark' | null) || 'light';
   });
   const [grantCode, setGrantCode] = useState<string>(() => initialFlowDraft?.grantCode ?? '');
+  const [referralCodeUsed, setReferralCodeUsed] = useState<string | null>(() => initialFlowDraft?.referralCodeUsed ?? null);
+  const [referralDiscount, setReferralDiscount] = useState<number>(() => initialFlowDraft?.referralDiscount ?? 0);
   const [grantData, setGrantData] = useState<GrantCode | null>(() => {
     const code = initialFlowDraft?.grantCode;
     if (!code) {
@@ -209,13 +214,15 @@ export default function Home() {
       JSON.stringify({
         step,
         grantCode,
+        referralCodeUsed,
+        referralDiscount,
         selectedCourseIds,
         quizResult,
         requestCodeWhatsappUrl,
         registrationDraft,
       })
     );
-  }, [step, grantCode, selectedCourseIds, quizResult, requestCodeWhatsappUrl, registrationDraft, registrationData]);
+  }, [step, grantCode, referralCodeUsed, referralDiscount, selectedCourseIds, quizResult, requestCodeWhatsappUrl, registrationDraft, registrationData]);
 
   useEffect(() => {
     if (!APP_FEATURES.lightweightAnalytics) {
@@ -231,10 +238,10 @@ export default function Home() {
 
   const verifyGrantCode = async (code: string) => {
     const normalizedCode = code.trim().toUpperCase();
-    let result: Awaited<ReturnType<typeof verifyGrantCodeAction>>;
+    let result: Awaited<ReturnType<typeof verifyAccessCodeAction>>;
 
     try {
-      result = await verifyGrantCodeAction(normalizedCode);
+      result = await verifyAccessCodeAction(normalizedCode);
     } catch {
       trackEvent('grant_verify_error', { code: normalizedCode });
       return {
@@ -254,8 +261,10 @@ export default function Home() {
     const verifiedGrant = result.data;
     setGrantData(verifiedGrant);
     setGrantCode(verifiedGrant.code);
+    setReferralCodeUsed(result.referralCodeUsed ?? null);
+    setReferralDiscount(result.referralDiscount ?? 0);
     setStep('courses');
-    trackEvent('grant_verified', { code: verifiedGrant.code });
+    trackEvent('grant_verified', { code: verifiedGrant.code, type: result.accessType });
 
     return {
       success: true,
@@ -291,14 +300,14 @@ export default function Home() {
     const bundleDiscount = activeBundle?.extraDiscount ?? 0;
     const discount = Math.max(countDiscount, bundleDiscount);
     
-    const total = Math.max(subtotal - discount, 0);
+    const total = Math.max(subtotal - discount - referralDiscount, 0);
     const firstInstallment = selectedCourses.length === 0
       ? 0
       : Math.min(total, selectedCourses.length * 200);
     const secondInstallment = total - firstInstallment;
     
     return { subtotal, discount, total, firstInstallment, secondInstallment };
-  }, [grantData, selectedCourses]);
+  }, [grantData, referralDiscount, selectedCourses]);
 
   const handleCourseToggle = useCallback((course: Course) => {
     setSelectedCourses(prev => {
@@ -367,15 +376,21 @@ export default function Home() {
     if (!normalizedCode) {
       setGrantCode('');
       setGrantData(null);
+      setReferralCodeUsed(null);
+      setReferralDiscount(0);
       return;
     }
 
     setGrantCode(normalizedCode);
     try {
-      const grantResult = await verifyGrantCodeAction(normalizedCode);
+      const grantResult = await verifyAccessCodeAction(normalizedCode);
       setGrantData(grantResult.success && grantResult.data ? grantResult.data : null);
+      setReferralCodeUsed(grantResult.success ? (grantResult.referralCodeUsed ?? null) : null);
+      setReferralDiscount(grantResult.success ? (grantResult.referralDiscount ?? 0) : 0);
     } catch {
       setGrantData(null);
+      setReferralCodeUsed(null);
+      setReferralDiscount(0);
     }
   }, []);
 
@@ -406,6 +421,7 @@ export default function Home() {
       firstInstallment: calculations.firstInstallment,
       secondInstallment: calculations.secondInstallment,
       grantCodeUsed: grantCode || undefined,
+      referralCodeUsed: referralCodeUsed ?? undefined,
     };
 
     const result = await submitRegistration(payload);
@@ -513,6 +529,8 @@ export default function Home() {
     setStep('hero');
     setGrantCode('');
     setGrantData(null);
+    setReferralCodeUsed(null);
+    setReferralDiscount(0);
     setSelectedCourses([]);
     setQuizResult(null);
     setRegistrationDraft({
@@ -562,6 +580,13 @@ export default function Home() {
             <span className="text-muted-foreground">Initiative</span>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/referrals"
+              className="action-secondary hidden items-center gap-2 rounded-2xl px-4 py-2 text-xs font-black text-primary hover:border-primary/35 hover:bg-primary/5 md:inline-flex"
+            >
+              <BadgePercent className="h-4 w-4" />
+              {lang === 'ar' ? 'تابع مسار خصمي' : 'Track My Discount'}
+            </Link>
             <LanguageToggle lang={lang} onToggle={setLang} />
             <ThemeToggle theme={theme} onToggle={setTheme} />
           </div>
@@ -606,6 +631,8 @@ export default function Home() {
                 onSkip={() => {
                   setGrantData(null);
                   setGrantCode('');
+                  setReferralCodeUsed(null);
+                  setReferralDiscount(0);
                   trackEvent('grant_step_skipped');
                   setStep('courses');
                 }}

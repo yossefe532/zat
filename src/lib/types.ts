@@ -30,6 +30,7 @@ export interface RegistrationInput {
   firstInstallment: number;
   secondInstallment: number;
   grantCodeUsed?: string;
+  referralCodeUsed?: string;
 }
 
 export interface Registration extends RegistrationInput {
@@ -49,6 +50,7 @@ export interface RegistrationRecord {
   secondInstallment: number;
   registrationCode: string;
   grantCodeUsed?: string | null;
+  referralCodeUsed?: string | null;
   whatsappSent: boolean;
   createdAt?: string | null;
 }

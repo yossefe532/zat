@@ -7,7 +7,7 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
 type SessionRow = {
   id: string;
-  role: 'admin' | 'employee';
+  role: 'admin' | 'employee' | 'registrant';
   subject_id: string;
   expires_at: string;
 };
@@ -20,13 +20,20 @@ type EmployeeRow = {
   is_active: boolean;
 };
 
+type RegistrantRow = {
+  id: string;
+  full_name: string;
+  grant_code_used: string | null;
+};
+
 export type SessionActor = {
-  role: 'admin' | 'employee';
+  role: 'admin' | 'employee' | 'registrant';
   subjectId: string;
   employeeId?: string;
   employeeNumber?: string;
   fullName?: string;
   staffCode?: string;
+  registrationId?: string;
 };
 
 async function getSessionToken() {
@@ -116,6 +123,29 @@ export async function getSessionActor(): Promise<SessionActor | null> {
     };
   }
 
+  if (session.role === 'registrant') {
+    const { data: registrant, error: registrantError } = await supabase
+      .from('registrations')
+      .select('id, full_name, grant_code_used')
+      .eq('id', session.subject_id)
+      .maybeSingle<RegistrantRow>();
+
+    if (registrantError) {
+      throw new Error(registrantError.message);
+    }
+
+    if (!registrant || !registrant.grant_code_used) {
+      return null;
+    }
+
+    return {
+      role: 'registrant',
+      subjectId: registrant.id,
+      registrationId: registrant.id,
+      fullName: registrant.full_name,
+    };
+  }
+
   const { data: employee, error: employeeError } = await supabase
     .from('employees')
     .select('id, employee_number, full_name, staff_code, is_active')
@@ -140,7 +170,7 @@ export async function getSessionActor(): Promise<SessionActor | null> {
   };
 }
 
-export async function requireSession(allowedRoles?: Array<'admin' | 'employee'>) {
+export async function requireSession(allowedRoles?: Array<'admin' | 'employee' | 'registrant'>) {
   const actor = await getSessionActor();
 
   if (!actor) {

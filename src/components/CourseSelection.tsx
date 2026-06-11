@@ -433,6 +433,45 @@ export function CourseSelection({
           </button>
         </div>
       </div>
+
+      {selectedCourses.length > 0 && (
+        <div className="fixed inset-x-4 bottom-4 z-40 md:inset-x-auto md:bottom-6 md:right-6 md:w-[22rem]">
+          <div className="hero-panel rounded-[1.7rem] border border-primary/20 bg-card/92 p-4 shadow-2xl backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+                <ShoppingCart className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-muted-foreground md:text-sm">
+                  {isAr ? 'تم اختيار كورساتك' : 'Your selection is ready'}
+                </p>
+                <p className="truncate text-sm font-black text-foreground md:text-base">
+                  {isAr
+                    ? `${selectedCourses.length} كورسات مختارة`
+                    : `${selectedCourses.length} selected courses`}
+                </p>
+              </div>
+              <div className="text-left">
+                <p className="text-[11px] font-black text-muted-foreground">
+                  {isAr ? 'الإجمالي' : 'Total'}
+                </p>
+                <p className="text-lg font-black text-primary md:text-xl">
+                  {calculations.total} {isAr ? 'ج' : 'EGP'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onContinue}
+              className="action-primary mt-4 inline-flex w-full items-center justify-center gap-3 rounded-2xl px-6 py-4 text-sm font-black md:text-base"
+              aria-label={isAr ? 'إكمال التسجيل بالكورسات المختارة' : 'Complete registration with selected courses'}
+            >
+              {isAr ? 'إكمال التسجيل الآن' : 'Continue Registration'}
+              <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

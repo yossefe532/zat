@@ -9,6 +9,11 @@ export const adminLoginSchema = z.object({
   password: z.string().min(6, 'كلمة المرور مطلوبة'),
 });
 
+export const registrantLoginSchema = z.object({
+  phone: z.string().trim().min(10, 'رقم الهاتف غير صالح'),
+  registrationCode: z.string().trim().min(3, 'كود التسجيل مطلوب'),
+});
+
 export const createEmployeeSchema = z.object({
   fullName: z.string().trim().min(3, 'اسم الموظف مطلوب'),
   whatsappNumber: z.string().trim().min(10, 'رقم الواتساب غير صالح'),

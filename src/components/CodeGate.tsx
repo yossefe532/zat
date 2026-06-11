@@ -39,7 +39,7 @@ export function CodeGate({
 
   const handleVerify = async () => {
     if (!code.trim()) {
-      setError(isAr ? 'الرجاء إدخال كود المنحة' : 'Please enter grant code');
+      setError(isAr ? 'الرجاء إدخال كود المنحة أو كود الإحالة' : 'Please enter a grant or referral code');
       return;
     }
     
@@ -111,19 +111,19 @@ export function CodeGate({
               <Lock className="w-10 h-10 text-primary" />
             </div>
             <h2 className="section-title font-black title-font text-primary">
-              {isAr ? 'أدخل كود المنحة الخاص بك' : 'Enter Your Grant Code'}
+              {isAr ? 'أدخل كود المنحة أو كود الإحالة' : 'Enter Grant or Referral Code'}
             </h2>
             <p className="section-subtitle font-bold">
               {isAr 
-                ? '🔒 كود ZAT السري - أدخله هنا لتفعيل خصم المنحة فوراً'
-                : '🔒 ZAT Secret Code - Enter it here to activate your discount'}
+                ? '🔒 أدخل كود المنحة أو كود الإحالة لتفعيل خصم المنحة فوراً'
+                : '🔒 Enter your grant or referral code to activate the discount'}
             </p>
           </div>
           
           <div className="space-y-6">
             <div className="space-y-3">
               <label className="px-2 text-sm font-black text-foreground md:text-base">
-                {isAr ? 'كود المنحة' : 'Grant Code'}
+                {isAr ? 'الكود' : 'Code'}
               </label>
               <div className="relative">
                 <input
@@ -133,7 +133,7 @@ export function CodeGate({
                     setCode(e.target.value.toUpperCase());
                     setError('');
                   }}
-                  placeholder={isAr ? 'أدخل الكود الخاص بك فقط' : 'Enter your private code only'}
+                  placeholder={isAr ? 'أدخل كود المنحة أو الإحالة' : 'Enter your grant/referral code'}
                   className="field-shell w-full rounded-[1.5rem] px-7 py-5 text-center text-2xl font-black uppercase tracking-[0.28em] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 md:text-[2rem]"
                   dir="ltr"
                 />

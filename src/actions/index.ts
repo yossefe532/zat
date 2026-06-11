@@ -2,7 +2,9 @@
 
 import { DEFAULT_GRANT_CODES } from '@/lib/data';
 import { buildRegistrationPhoneCandidates, normalizeRegistrantName } from '@/lib/registration-booking';
+import { applyReferralBenefitsToTotal, verifyReferralCodeForGrant } from '@/lib/portal';
 import { getSupabaseClient } from '@/lib/supabase';
+import { requireServiceSupabaseClient } from '@/lib/server-supabase';
 import { createRegistrationCodeCandidate, normalizePhoneNumber } from '@/lib/utils';
 import type { RegistrationInput, RegistrationRecord, RegistrationSubmissionResult } from '@/lib/types';
 
@@ -25,11 +27,12 @@ type RegistrationRow = {
   second_installment: number | string | null;
   registration_code: string;
   grant_code_used: string | null;
+  referral_code_used: string | null;
   whatsapp_sent: boolean | null;
   created_at: string | null;
 };
 
-const registrationSelectFields = 'id, full_name, phone, age, courses, total_price, first_installment, second_installment, registration_code, grant_code_used, whatsapp_sent, created_at';
+const registrationSelectFields = 'id, full_name, phone, age, courses, total_price, first_installment, second_installment, registration_code, grant_code_used, referral_code_used, whatsapp_sent, created_at';
 
 function mapGrantCodeRow(grant: GrantCodeRow) {
   return {
@@ -71,6 +74,7 @@ function mapRegistrationRow(row: RegistrationRow): RegistrationRecord {
     secondInstallment: Number(row.second_installment ?? 0),
     registrationCode: row.registration_code,
     grantCodeUsed: row.grant_code_used,
+    referralCodeUsed: row.referral_code_used,
     whatsappSent: Boolean(row.whatsapp_sent),
     createdAt: row.created_at,
   };
@@ -151,6 +155,10 @@ export async function submitRegistration(data: RegistrationInput): Promise<Regis
       };
     }
 
+    const referralCodeUsed = data.referralCodeUsed?.trim().toUpperCase() ?? null;
+    const referral = referralCodeUsed ? await verifyReferralCodeForGrant(referralCodeUsed) : null;
+    const referralDiscountApplied = referral ? 50 : 0;
+
     const registrationCode = await generateUniqueRegistrationCode(data.grantCodeUsed);
     const { data: result, error } = await supabase
       .from('registrations')
@@ -163,12 +171,31 @@ export async function submitRegistration(data: RegistrationInput): Promise<Regis
         first_installment: data.firstInstallment,
         second_installment: data.secondInstallment,
         registration_code: registrationCode,
-        grant_code_used: data.grantCodeUsed || null
+        grant_code_used: data.grantCodeUsed || null,
+        referral_code_used: referral?.referralCodeUsed ?? null,
+        referral_discount_applied: referralDiscountApplied,
       }])
       .select(registrationSelectFields)
       .single<RegistrationRow>();
 
     if (error) throw error;
+
+    if (referral && result?.id) {
+      const serviceSupabase = requireServiceSupabaseClient();
+      const { error: eventError } = await serviceSupabase
+        .from('referral_events')
+        .insert([{
+          referral_code_used: referral.referralCodeUsed,
+          root_referral_code: referral.rootReferralCode,
+          owner_registration_id: referral.ownerRegistrationId,
+          referred_registration_id: result.id,
+          applied_discount: 50,
+        }]);
+
+      if (eventError) {
+        throw new Error(eventError.message);
+      }
+    }
 
     return {
       success: true,
@@ -197,13 +224,18 @@ export async function updateExistingRegistration(
       throw new Error('Supabase is not configured');
     }
 
+    const benefitApplied = await applyReferralBenefitsToTotal(registrationId, data.courses, data.totalPrice);
+    const safeTotal = benefitApplied.total;
+    const safeFirst = Math.min(Number(data.firstInstallment ?? 0), safeTotal);
+    const safeSecond = Math.max(safeTotal - safeFirst, 0);
+
     const { data: result, error } = await supabase
       .from('registrations')
       .update({
         courses: data.courses,
-        total_price: data.totalPrice,
-        first_installment: data.firstInstallment,
-        second_installment: data.secondInstallment,
+        total_price: safeTotal,
+        first_installment: safeFirst,
+        second_installment: safeSecond,
         grant_code_used: data.grantCodeUsed || null,
       })
       .eq('id', registrationId)
@@ -292,6 +324,52 @@ export async function verifyGrantCodeAction(code: string) {
     success: false,
     errorMessage: 'Grant code not found',
   };
+}
+
+export async function verifyAccessCodeAction(code: string) {
+  const normalizedCode = code.trim().toUpperCase();
+  const grantResult = await verifyGrantCodeAction(normalizedCode);
+
+  if (grantResult.success && grantResult.data) {
+    return {
+      success: true,
+      data: grantResult.data,
+      accessType: 'grant' as const,
+      referralCodeUsed: null as string | null,
+      referralDiscount: 0,
+    };
+  }
+
+  try {
+    const referral = await verifyReferralCodeForGrant(normalizedCode);
+    if (!referral) {
+      return {
+        success: false,
+        errorMessage: 'Invalid or inactive code',
+      };
+    }
+
+    const rootGrantResult = await verifyGrantCodeAction(referral.rootGrantCodeUsed);
+    if (!rootGrantResult.success || !rootGrantResult.data) {
+      return {
+        success: false,
+        errorMessage: 'Invalid or inactive code',
+      };
+    }
+
+    return {
+      success: true,
+      data: rootGrantResult.data,
+      accessType: 'referral' as const,
+      referralCodeUsed: referral.referralCodeUsed,
+      referralDiscount: 50,
+    };
+  } catch {
+    return {
+      success: false,
+      errorMessage: 'Invalid or inactive code',
+    };
+  }
 }
 
 export async function getRegistrations() {
