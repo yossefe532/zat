@@ -582,10 +582,12 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Link
               href="/referrals"
-              className="action-secondary hidden items-center gap-2 rounded-2xl px-4 py-2 text-xs font-black text-primary hover:border-primary/35 hover:bg-primary/5 md:inline-flex"
+              className="action-secondary inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black text-primary hover:border-primary/35 hover:bg-primary/5 md:px-4"
             >
               <BadgePercent className="h-4 w-4" />
-              {lang === 'ar' ? 'تابع مسار خصمي' : 'Track My Discount'}
+              <span className="hidden md:inline">
+                {lang === 'ar' ? 'تابع مسار خصمي' : 'Track My Discount'}
+              </span>
             </Link>
             <LanguageToggle lang={lang} onToggle={setLang} />
             <ThemeToggle theme={theme} onToggle={setTheme} />
