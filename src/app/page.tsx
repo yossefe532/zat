@@ -300,13 +300,23 @@ export default function Home() {
     const bundleDiscount = activeBundle?.extraDiscount ?? 0;
     const discount = Math.max(countDiscount, bundleDiscount);
     
-    const total = Math.max(subtotal - discount - referralDiscount, 0);
+    const referralDiscountApplied = referralDiscount > 0 ? 50 : 0;
+    const totalBeforeReferral = Math.max(subtotal - discount, 0);
+    const total = Math.max(totalBeforeReferral - referralDiscountApplied, 0);
     const firstInstallment = selectedCourses.length === 0
       ? 0
       : Math.min(total, selectedCourses.length * 200);
     const secondInstallment = total - firstInstallment;
     
-    return { subtotal, discount, total, firstInstallment, secondInstallment };
+    return {
+      subtotal,
+      discount,
+      referralDiscount: referralDiscountApplied,
+      totalBeforeReferral,
+      total,
+      firstInstallment,
+      secondInstallment,
+    };
   }, [grantData, referralDiscount, selectedCourses]);
 
   const handleCourseToggle = useCallback((course: Course) => {
@@ -370,14 +380,15 @@ export default function Home() {
     return courses.find((course) => !selectedIds.includes(course.id)) ?? null;
   }, [courses, quizResult, selectedCourseIds]);
 
-  const syncGrantStateFromCode = useCallback(async (code?: string | null) => {
-    const normalizedCode = code?.trim().toUpperCase() ?? '';
+  const syncAccessStateFromRecord = useCallback(async (record?: { grantCodeUsed?: string | null; referralCodeUsed?: string | null } | null) => {
+    const normalizedCode = record?.grantCodeUsed?.trim().toUpperCase() ?? '';
+    const normalizedReferral = record?.referralCodeUsed?.trim().toUpperCase() ?? '';
 
     if (!normalizedCode) {
       setGrantCode('');
       setGrantData(null);
-      setReferralCodeUsed(null);
-      setReferralDiscount(0);
+      setReferralCodeUsed(normalizedReferral || null);
+      setReferralDiscount(normalizedReferral ? 50 : 0);
       return;
     }
 
@@ -385,17 +396,17 @@ export default function Home() {
     try {
       const grantResult = await verifyAccessCodeAction(normalizedCode);
       setGrantData(grantResult.success && grantResult.data ? grantResult.data : null);
-      setReferralCodeUsed(grantResult.success ? (grantResult.referralCodeUsed ?? null) : null);
-      setReferralDiscount(grantResult.success ? (grantResult.referralDiscount ?? 0) : 0);
+      setReferralCodeUsed(normalizedReferral || (grantResult.success ? (grantResult.referralCodeUsed ?? null) : null));
+      setReferralDiscount(normalizedReferral ? 50 : (grantResult.success ? (grantResult.referralDiscount ?? 0) : 0));
     } catch {
       setGrantData(null);
-      setReferralCodeUsed(null);
-      setReferralDiscount(0);
+      setReferralCodeUsed(normalizedReferral || null);
+      setReferralDiscount(normalizedReferral ? 50 : 0);
     }
   }, []);
 
   const openRegistrationSuccess = useCallback(async (record: RegistrationRecord, mode: RegistrationSuccessMode) => {
-    await syncGrantStateFromCode(record.grantCodeUsed ?? null);
+    await syncAccessStateFromRecord({ grantCodeUsed: record.grantCodeUsed ?? null, referralCodeUsed: record.referralCodeUsed ?? null });
     setSelectedCourses(courses.filter((course) => record.courses.includes(course.id)));
     setRegistrationData({
       fullName: record.fullName,
@@ -407,7 +418,7 @@ export default function Home() {
     setExistingRegistration(null);
     setExistingRegistrationError('');
     setStep('success');
-  }, [courses, syncGrantStateFromCode]);
+  }, [courses, syncAccessStateFromRecord]);
 
   const handleRegistration = async (data: { fullName: string; phone: string; age: number }) => {
     setExistingRegistration(null);

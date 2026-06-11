@@ -2,15 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Copy, Gift, Loader2, Sparkles, Trophy, Users } from 'lucide-react';
+import { Copy, Gift, Loader2, Navigation2, Sparkles, Trophy, Users } from 'lucide-react';
 
 type ReferralMilestoneStatus = {
-  milestone: 1 | 3 | 5;
+  milestone: 1 | 3 | 5 | 7 | 10;
   achieved: boolean;
   claimable: boolean;
   benefit?: {
     id: string;
-    type: 'discount_total' | 'free_course';
+    type: 'discount_total' | 'free_course' | 'perk';
     value: number;
     isConsumed: boolean;
   } | null;
@@ -114,7 +114,7 @@ export default function ReferralsPage() {
     }
   };
 
-  const handleRedeem = async (milestone: 1 | 3 | 5) => {
+  const handleRedeem = async (milestone: 1 | 3 | 5 | 7 | 10) => {
     try {
       setRedeemBusy(milestone);
       const response = await fetch('/api/referrals/redeem', {
@@ -279,6 +279,12 @@ export default function ReferralsPage() {
                   <li>{isAr ? 'عند اكتمال التسجيل، يتم احتساب الإحالة تلقائيًا.' : 'After registration completes, the referral is counted automatically.'}</li>
                   <li>{isAr ? 'عند اكتمال أي مرحلة، استرد المكافأة عبر زر الاسترداد.' : 'Once a milestone is reached, redeem via the button.'}</li>
                 </ul>
+                <Link
+                  href="/referrals/guide"
+                  className="action-secondary mt-5 inline-flex w-full items-center justify-center rounded-2xl py-3 text-sm font-black text-primary hover:border-primary/35 hover:bg-primary/5"
+                >
+                  {isAr ? 'اقرأ الدليل الكامل' : 'Read full guide'}
+                </Link>
               </div>
             </div>
           </div>
@@ -294,62 +300,82 @@ export default function ReferralsPage() {
               </div>
             </div>
 
-            <div className="mt-6 space-y-4">
-              {milestones.map((item) => (
-                <div
-                  key={item.milestone}
-                  className={`rounded-[1.6rem] border p-5 transition-colors ${
-                    item.achieved
-                      ? 'border-success/30 bg-success/10'
-                      : 'border-border/70 bg-card/60'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-2 text-right">
-                      <div className="inline-flex items-center gap-2 text-sm font-black text-foreground">
-                        <Gift className={`h-4 w-4 ${item.achieved ? 'text-success' : 'text-muted-foreground'}`} />
-                        {isAr ? `المرحلة ${item.milestone}` : `Milestone ${item.milestone}`}
-                      </div>
-                      <p className="text-sm font-bold text-muted-foreground">
-                        {item.milestone === 1
-                          ? (isAr ? 'خصم 50 جنيه لك ولصديقك على إجمالي سعر الطلب' : '50 EGP off the total order for you and your friend')
-                          : item.milestone === 3
-                            ? (isAr ? 'خصم 200 جنيه على إجمالي سعر أي طلب' : '200 EGP off the total order')
-                            : (isAr ? 'كورس مجاني (يُخصم قيمة كورس واحد من إجمالي الطلب)' : 'One free course (discounted from total)')}
-                      </p>
-                    </div>
+            <div className="relative mt-6">
+              <div className="absolute inset-y-0 left-6 w-0.5 rounded-full bg-route-dash rtl:left-auto rtl:right-6" />
+              <div className="absolute left-2 top-0 flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/20 bg-card/80 text-primary shadow-lg backdrop-blur-md rtl:left-auto rtl:right-2">
+                <Navigation2 className="h-5 w-5" />
+              </div>
 
-                    <div className="text-left">
-                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${
-                        item.achieved ? 'bg-success/15 text-success' : 'bg-muted/50 text-muted-foreground'
-                      }`}>
-                        {item.achieved ? (isAr ? 'مكتملة' : 'Done') : (isAr ? 'غير مكتملة' : 'Locked')}
-                      </span>
-                    </div>
-                  </div>
+              <div className="space-y-4">
+                {milestones.map((item) => (
+                  <div key={item.milestone} className="relative pl-14 rtl:pl-0 rtl:pr-14">
+                    <div
+                      className={`absolute left-[1.07rem] top-7 h-4 w-4 rounded-full border-4 rtl:left-auto rtl:right-[1.07rem] ${
+                        item.achieved ? 'border-success bg-success/20' : 'border-border bg-card'
+                      }`}
+                    />
 
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs font-black text-muted-foreground">
-                      {item.claimable
-                        ? (isAr ? 'يمكنك استرداد المكافأة الآن.' : 'You can redeem now.')
-                        : item.benefit
-                          ? (item.benefit.isConsumed
-                            ? (isAr ? 'تم استخدام المكافأة بالفعل.' : 'Reward already used.')
-                            : (isAr ? 'تم تجهيز المكافأة ويمكن استخدامها في طلبك القادم.' : 'Reward is ready for your next order.'))
-                          : (isAr ? 'أكمل المرحلة لفتح زر الاسترداد.' : 'Complete the milestone to unlock redeem.')}
-                    </p>
-                    <button
-                      type="button"
-                      disabled={!item.claimable || redeemBusy !== null}
-                      onClick={() => void handleRedeem(item.milestone)}
-                      className="action-primary inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black disabled:opacity-40"
+                    <div
+                      className={`rounded-[1.7rem] border p-5 transition-colors ${
+                        item.achieved
+                          ? 'border-success/30 bg-success/10'
+                          : 'border-border/70 bg-card/60'
+                      }`}
                     >
-                      {redeemBusy === item.milestone ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      {isAr ? 'استرداد المكافأة' : 'Redeem'}
-                    </button>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-2 text-right">
+                          <div className="inline-flex items-center gap-2 text-sm font-black text-foreground">
+                            <Gift className={`h-4 w-4 ${item.achieved ? 'text-success' : 'text-muted-foreground'}`} />
+                            {isAr ? `محطة ${item.milestone}` : `Stop ${item.milestone}`}
+                          </div>
+                          <p className="text-sm font-bold text-muted-foreground">
+                            {item.milestone === 1
+                              ? (isAr ? 'خصم 50 جنيه لك ولصديقك على إجمالي سعر الطلب' : '50 EGP off the total order for you and your friend')
+                              : item.milestone === 3
+                                ? (isAr ? 'خصم 200 جنيه على إجمالي سعر أي طلب' : '200 EGP off the total order')
+                                : item.milestone === 5
+                                  ? (isAr ? 'كورس مجاني (يُخصم قيمة كورس واحد من إجمالي الطلب)' : 'One free course (discounted from total)')
+                                  : item.milestone === 7
+                                    ? (isAr ? 'اشتراك Canva Pro مجانًا' : 'Free Canva Pro subscription')
+                                    : (isAr ? 'كورسين مجانًا (يُخصم قيمة كورسين من إجمالي الطلب)' : 'Two free courses (discounted from total)')}
+                          </p>
+                        </div>
+
+                        <div className="text-left">
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${
+                            item.achieved ? 'bg-success/15 text-success' : 'bg-muted/50 text-muted-foreground'
+                          }`}>
+                            {item.achieved ? (isAr ? 'مكتملة' : 'Done') : (isAr ? 'غير مكتملة' : 'Locked')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs font-black text-muted-foreground">
+                          {item.claimable
+                            ? (isAr ? 'يمكنك استرداد المكافأة الآن.' : 'You can redeem now.')
+                            : item.benefit
+                              ? (item.benefit.type === 'perk'
+                                ? (isAr ? 'تم تسجيل استرداد الميزة عبر واتساب وسيتم التواصل لتسليمها.' : 'Perk redemption recorded via WhatsApp. Delivery will be coordinated.')
+                                : (item.benefit.isConsumed
+                                  ? (isAr ? 'تم استخدام المكافأة بالفعل.' : 'Reward already used.')
+                                  : (isAr ? 'تم تجهيز المكافأة ويمكن استخدامها في طلبك القادم.' : 'Reward is ready for your next order.')))
+                              : (isAr ? 'أكمل المرحلة لفتح زر الاسترداد.' : 'Complete the milestone to unlock redeem.')}
+                        </p>
+                        <button
+                          type="button"
+                          disabled={!item.claimable || redeemBusy !== null}
+                          onClick={() => void handleRedeem(item.milestone)}
+                          className="action-primary inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black disabled:opacity-40"
+                        >
+                          {redeemBusy === item.milestone ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                          {isAr ? 'استرداد المكافأة' : 'Redeem'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <div className="mt-6 rounded-[1.6rem] border border-primary/15 bg-primary/5 p-5 text-right">
@@ -366,4 +392,3 @@ export default function ReferralsPage() {
     </main>
   );
 }
-

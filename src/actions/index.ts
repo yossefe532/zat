@@ -1,8 +1,8 @@
 'use server';
 
-import { DEFAULT_GRANT_CODES } from '@/lib/data';
+import { DEFAULT_GRANT_CODES, DISCOUNT_RULES, SMART_BUNDLES } from '@/lib/data';
 import { buildRegistrationPhoneCandidates, normalizeRegistrantName } from '@/lib/registration-booking';
-import { applyReferralBenefitsToTotal, verifyReferralCodeForGrant } from '@/lib/portal';
+import { applyReferralBenefitsToTotal, getCourseCatalog, verifyReferralCodeForGrant } from '@/lib/portal';
 import { getSupabaseClient } from '@/lib/supabase';
 import { requireServiceSupabaseClient } from '@/lib/server-supabase';
 import { createRegistrationCodeCandidate, normalizePhoneNumber } from '@/lib/utils';
@@ -77,6 +77,53 @@ function mapRegistrationRow(row: RegistrationRow): RegistrationRecord {
     referralCodeUsed: row.referral_code_used,
     whatsappSent: Boolean(row.whatsapp_sent),
     createdAt: row.created_at,
+  };
+}
+
+async function calculateOrderTotals(options: { courseIds: number[]; hasGrant: boolean; referralDiscountApplied: number }) {
+  const catalog = await getCourseCatalog({ includeInactive: true });
+  const catalogMap = new Map(catalog.map((course) => [course.id, course] as const));
+  const selectedCourses = options.courseIds
+    .map((courseId) => catalogMap.get(courseId))
+    .filter((course): course is NonNullable<typeof course> => Boolean(course));
+  const selectedCourseIds = selectedCourses.map((course) => course.id);
+
+  const subtotal = selectedCourses.reduce((sum, course) => (
+    sum + (options.hasGrant ? course.grantPrice : course.originalPrice)
+  ), 0);
+
+  let countDiscount = 0;
+  for (const rule of DISCOUNT_RULES) {
+    if (selectedCourses.length >= rule.count) {
+      countDiscount = rule.discount;
+    }
+  }
+
+  const activeBundle = SMART_BUNDLES.find((bundle) => {
+    if (bundle.courseIds.length !== selectedCourseIds.length) {
+      return false;
+    }
+
+    return bundle.courseIds.every((courseId) => selectedCourseIds.includes(courseId));
+  });
+
+  const bundleDiscount = activeBundle?.extraDiscount ?? 0;
+  const discount = Math.max(countDiscount, bundleDiscount);
+
+  const totalBeforeReferral = Math.max(subtotal - discount, 0);
+  const total = Math.max(totalBeforeReferral - Math.max(0, options.referralDiscountApplied), 0);
+  const firstInstallment = selectedCourses.length === 0
+    ? 0
+    : Math.min(total, selectedCourses.length * 200);
+  const secondInstallment = Math.max(total - firstInstallment, 0);
+
+  return {
+    subtotal,
+    discount,
+    totalBeforeReferral,
+    total,
+    firstInstallment,
+    secondInstallment,
   };
 }
 
@@ -158,6 +205,11 @@ export async function submitRegistration(data: RegistrationInput): Promise<Regis
     const referralCodeUsed = data.referralCodeUsed?.trim().toUpperCase() ?? null;
     const referral = referralCodeUsed ? await verifyReferralCodeForGrant(referralCodeUsed) : null;
     const referralDiscountApplied = referral ? 50 : 0;
+    const calculated = await calculateOrderTotals({
+      courseIds: data.courses,
+      hasGrant: Boolean(data.grantCodeUsed),
+      referralDiscountApplied,
+    });
 
     const registrationCode = await generateUniqueRegistrationCode(data.grantCodeUsed);
     const { data: result, error } = await supabase
@@ -167,9 +219,9 @@ export async function submitRegistration(data: RegistrationInput): Promise<Regis
         phone: normalizedPhone,
         age: data.age,
         courses: data.courses,
-        total_price: data.totalPrice,
-        first_installment: data.firstInstallment,
-        second_installment: data.secondInstallment,
+        total_price: calculated.total,
+        first_installment: calculated.firstInstallment,
+        second_installment: calculated.secondInstallment,
         registration_code: registrationCode,
         grant_code_used: data.grantCodeUsed || null,
         referral_code_used: referral?.referralCodeUsed ?? null,
@@ -224,9 +276,43 @@ export async function updateExistingRegistration(
       throw new Error('Supabase is not configured');
     }
 
-    const benefitApplied = await applyReferralBenefitsToTotal(registrationId, data.courses, data.totalPrice);
+    const serviceSupabase = requireServiceSupabaseClient();
+    const { data: existingDiscountRow, error: existingDiscountError } = await serviceSupabase
+      .from('registrations')
+      .select('referral_discount_applied, referral_code_used')
+      .eq('id', registrationId)
+      .maybeSingle<{ referral_discount_applied: number | string | null; referral_code_used: string | null }>();
+
+    if (existingDiscountError) {
+      throw new Error(existingDiscountError.message);
+    }
+
+    const persistedReferralDiscount = Number(existingDiscountRow?.referral_discount_applied ?? 0);
+    const inferredReferralDiscount = existingDiscountRow?.referral_code_used ? 50 : 0;
+    const effectiveReferralDiscount = persistedReferralDiscount > 0 ? persistedReferralDiscount : inferredReferralDiscount;
+
+    if (effectiveReferralDiscount !== persistedReferralDiscount) {
+      const { error: syncDiscountError } = await serviceSupabase
+        .from('registrations')
+        .update({ referral_discount_applied: effectiveReferralDiscount })
+        .eq('id', registrationId);
+
+      if (syncDiscountError) {
+        throw new Error(syncDiscountError.message);
+      }
+    }
+
+    const calculated = await calculateOrderTotals({
+      courseIds: data.courses,
+      hasGrant: Boolean(data.grantCodeUsed),
+      referralDiscountApplied: effectiveReferralDiscount,
+    });
+
+    const benefitApplied = await applyReferralBenefitsToTotal(registrationId, data.courses, calculated.total);
     const safeTotal = benefitApplied.total;
-    const safeFirst = Math.min(Number(data.firstInstallment ?? 0), safeTotal);
+    const safeFirst = data.courses.length === 0
+      ? 0
+      : Math.min(safeTotal, data.courses.length * 200);
     const safeSecond = Math.max(safeTotal - safeFirst, 0);
 
     const { data: result, error } = await supabase

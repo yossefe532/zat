@@ -357,6 +357,22 @@ tbody td {
   to { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes routeDash {
+  from { background-position: 0 0; }
+  to { background-position: 0 20px; }
+}
+
+.bg-route-dash {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--primary) 60%, transparent) 0,
+    color-mix(in srgb, var(--primary) 60%, transparent) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  animation: routeDash 1.2s linear infinite;
+}
+
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }

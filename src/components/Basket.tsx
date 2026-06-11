@@ -17,6 +17,8 @@ interface BasketProps {
   calculations: {
     subtotal: number;
     discount: number;
+    referralDiscount?: number;
+    totalBeforeReferral?: number;
     total: number;
     firstInstallment: number;
     secondInstallment: number;
@@ -212,6 +214,16 @@ export function Basket({
                     {isAr ? `خصم التجميع (${applicableDiscount.count}+ دورات)` : `Bundle Discount (${applicableDiscount.count}+ courses)`}
                   </span>
                   <span className="font-black">-{formatPrice(applicableDiscount.discount)} {isAr ? 'ج' : 'EGP'}</span>
+                </div>
+              )}
+
+              {(calculations.referralDiscount ?? 0) > 0 && (
+                <div className="flex justify-between text-success bg-success/5 p-4 rounded-2xl border border-success/20">
+                  <span className="flex items-center gap-2">
+                    <Tag className="w-5 h-5" />
+                    {isAr ? 'خصم الإحالة' : 'Referral Discount'}
+                  </span>
+                  <span className="font-black">-{formatPrice(calculations.referralDiscount ?? 0)} {isAr ? 'ج' : 'EGP'}</span>
                 </div>
               )}
               

@@ -39,7 +39,7 @@ export function SuccessPage({
 }: SuccessPageProps) {
   const isAr = lang === 'ar';
   const shouldReduceMotion = useReducedMotion();
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(30);
   const [autoOpened, setAutoOpened] = useState(false);
   const openedRef = useRef(false);
   const successTitle = registrationData.mode === 'created'
@@ -61,7 +61,7 @@ export function SuccessPage({
   
   const { expiryDay, expiryDateStr } = useMemo(() => {
     const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 3);
+    expiryDate.setDate(expiryDate.getDate() + 2);
 
     return {
       expiryDay: expiryDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'long' }),
@@ -87,7 +87,7 @@ export function SuccessPage({
 - القسط الأول (يُدفع الآن): ${formatPrice(calculations.firstInstallment)} جنيه
 - القسط الثاني (المتبقي): ${formatPrice(calculations.secondInstallment)} جنيه
 
-⚠️ صلاحية الكود: هذا الكود صالح لمدة 3 أيام فقط، وينتهي بحلول يوم ${expiryDay} الموافق ${expiryDateStr}.`
+⚠️ صلاحية الكود: هذا الكود صالح لمدة يومين فقط، وينتهي بحلول يوم ${expiryDay} الموافق ${expiryDateStr}.`
       : `Hello, I'd like to confirm my registration:
 Name: ${registrationData.fullName}
 Phone: ${registrationData.phone}
@@ -100,7 +100,7 @@ Payment Details:
 - 1st Installment (Pay Now): ${formatPrice(calculations.firstInstallment)} EGP
 - 2nd Installment (Remaining): ${formatPrice(calculations.secondInstallment)} EGP
 
-⚠️ Code Validity: This code is valid for 3 days only, expiring on ${expiryDay}, ${expiryDateStr}.`
+⚠️ Code Validity: This code is valid for 2 days only, expiring on ${expiryDay}, ${expiryDateStr}.`
   ), [calculations.firstInstallment, calculations.secondInstallment, calculations.total, expiryDateStr, expiryDay, isAr, registrationData.age, registrationData.fullName, registrationData.phone, registrationData.registrationCode, selectedCourses]);
 
   const whatsappLink = useMemo(
@@ -133,7 +133,7 @@ Payment Details:
         setAutoOpened(true);
         window.location.href = whatsappLink;
       }
-    }, 5000);
+    }, 30000);
 
     return () => {
       window.clearInterval(countdownInterval);
@@ -230,8 +230,8 @@ Payment Details:
           <div className="rounded-[1.5rem] border border-destructive/25 bg-destructive/10 p-5 space-y-3">
             <p className="text-sm md:text-base font-black text-destructive leading-relaxed">
               ⚠️ {isAr 
-                ? `تنبيه: الكود صالح لـ 3 أيام فقط! ينتهي يوم ${expiryDay} الموافق ${expiryDateStr}`
-                : `Alert: Code valid for 3 days! Expires on ${expiryDay}, ${expiryDateStr}`}
+                ? `تنبيه: الكود صالح ليومين فقط! ينتهي يوم ${expiryDay} الموافق ${expiryDateStr}`
+                : `Alert: Code valid for 2 days! Expires on ${expiryDay}, ${expiryDateStr}`}
             </p>
             <p className="text-sm md:text-base font-black text-destructive leading-relaxed">
               {isAr

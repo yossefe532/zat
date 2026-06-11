@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => ({}))) as { milestone?: number };
     const milestone = body.milestone;
 
-    if (milestone !== 1 && milestone !== 3 && milestone !== 5) {
+    if (milestone !== 1 && milestone !== 3 && milestone !== 5 && milestone !== 7 && milestone !== 10) {
       return NextResponse.json({ success: false, message: 'مرحلة غير صالحة' }, { status: 400 });
     }
 
@@ -22,4 +22,3 @@ export async function POST(request: Request) {
     return errorResponse(error);
   }
 }
-

@@ -9,6 +9,7 @@ import {
   randomToken,
 } from '@/lib/security';
 import { requireServiceSupabaseClient } from '@/lib/server-supabase';
+import { formatPrice } from '@/lib/utils';
 import type { SessionActor } from '@/lib/auth';
 
 type CourseRow = {
@@ -1169,12 +1170,12 @@ type RegistrationAccessRow = {
 };
 
 export type ReferralMilestoneStatus = {
-  milestone: 1 | 3 | 5;
+  milestone: 1 | 3 | 5 | 7 | 10;
   achieved: boolean;
   claimable: boolean;
   benefit?: {
     id: string;
-    type: 'discount_total' | 'free_course';
+    type: 'discount_total' | 'free_course' | 'perk';
     value: number;
     isConsumed: boolean;
   } | null;
@@ -1347,13 +1348,15 @@ async function getBenefitsForOwner(registrationId: string) {
 }
 
 const referralMilestones: Array<{
-  milestone: 1 | 3 | 5;
-  benefitType: 'discount_total' | 'free_course';
+  milestone: 1 | 3 | 5 | 7 | 10;
+  benefitType: 'discount_total' | 'free_course' | 'perk';
   benefitValue: number;
 }> = [
   { milestone: 1, benefitType: 'discount_total', benefitValue: 50 },
   { milestone: 3, benefitType: 'discount_total', benefitValue: 200 },
-  { milestone: 5, benefitType: 'free_course', benefitValue: 0 },
+  { milestone: 5, benefitType: 'free_course', benefitValue: 1 },
+  { milestone: 7, benefitType: 'perk', benefitValue: 0 },
+  { milestone: 10, benefitType: 'free_course', benefitValue: 2 },
 ];
 
 export async function getReferralDashboardForRegistrant(registrationId: string): Promise<ReferralDashboard> {
@@ -1418,7 +1421,7 @@ export async function verifyReferralCodeForGrant(accessCode: string) {
 
 export async function requestReferralMilestoneRedemption(
   registrationId: string,
-  milestone: 1 | 3 | 5,
+  milestone: 1 | 3 | 5 | 7 | 10,
 ) {
   const dashboard = await getReferralDashboardForRegistrant(registrationId);
   const milestoneStatus = dashboard.milestones.find((item) => item.milestone === milestone);
@@ -1468,19 +1471,55 @@ export async function requestReferralMilestoneRedemption(
     }
   }
 
+  const { data: invoiceSnapshot, error: invoiceError } = await supabase
+    .from('registrations')
+    .select('total_price, courses')
+    .eq('id', registrationId)
+    .maybeSingle<{ total_price: number | string; courses: number[] | null }>();
+
+  if (invoiceError) {
+    throw new Error(invoiceError.message);
+  }
+
+  const beforeInvoiceTotal = Number(invoiceSnapshot?.total_price ?? 0);
+  const registeredCourses = (invoiceSnapshot?.courses ?? []) as number[];
+  let discountValue = 0;
+
+  if (benefitConfig.benefitType === 'discount_total') {
+    discountValue = benefitConfig.benefitValue;
+  } else if (benefitConfig.benefitType === 'free_course') {
+    if (registeredCourses.length > 0) {
+      const selectedCourses = await resolveSelectedCourses(registeredCourses);
+      const freeCount = Math.max(1, Math.floor(benefitConfig.benefitValue || 1));
+      const sorted = [...selectedCourses].sort((a, b) => b.price - a.price);
+      discountValue = sorted.slice(0, freeCount).reduce((sum, course) => sum + course.price, 0);
+    }
+  }
+
+  const afterInvoiceTotal = Math.max(beforeInvoiceTotal - discountValue, 0);
+
+  const benefitLabel = milestone === 1
+    ? 'خصم 50 جنيه على إجمالي سعر الطلب'
+    : milestone === 3
+      ? 'خصم 200 جنيه على إجمالي سعر الطلب'
+      : milestone === 5
+        ? 'كورس مجاني (يُخصم قيمة كورس واحد من إجمالي الطلب)'
+        : milestone === 7
+          ? 'اشتراك Canva Pro مجانًا'
+          : 'كورسين مجانًا (يُخصم قيمة كورسين من إجمالي الطلب)';
+
   const message = `مرحباً، أريد استرداد مكافأة الإحالة:
 الاسم: ${registration.full_name}
 الهاتف: ${registration.phone}
 كود التسجيل: ${dashboard.referralCode}
 عدد الإحالات المحتسبة: ${dashboard.tierProgressCount}
 المرحلة: ${milestone}
-المكافأة: ${
-    milestone === 1
-      ? 'خصم 50 جنيه على إجمالي سعر الطلب'
-      : milestone === 3
-        ? 'خصم 200 جنيه على إجمالي سعر الطلب'
-        : 'كورس مجاني (يُخصم قيمة كورس واحد من إجمالي الطلب)'
-  }
+المكافأة: ${benefitLabel}
+
+تفاصيل الفاتورة:
+- قبل الخصم: ${formatPrice(beforeInvoiceTotal)} جنيه
+- قيمة الخصم/الميزة: ${formatPrice(discountValue)} جنيه
+- بعد الخصم: ${formatPrice(afterInvoiceTotal)} جنيه
 `;
 
   const { data: requestRow, error: requestError } = await supabase
@@ -1506,7 +1545,9 @@ export async function requestReferralMilestoneRedemption(
       milestone,
       benefit_type: benefitConfig.benefitType,
       benefit_value: benefitConfig.benefitValue,
-      is_consumed: false,
+      is_consumed: benefitConfig.benefitType === 'perk',
+      consumed_registration_id: benefitConfig.benefitType === 'perk' ? registrationId : null,
+      consumed_at: benefitConfig.benefitType === 'perk' ? new Date().toISOString() : null,
     }]);
 
   if (benefitError) {
@@ -1531,6 +1572,7 @@ export async function applyReferralBenefitsToTotal(ownerRegistrationId: string, 
     .select('id, milestone, benefit_type, benefit_value, is_consumed')
     .eq('owner_registration_id', ownerRegistrationId)
     .eq('is_consumed', false)
+    .in('benefit_type', ['discount_total', 'free_course'])
     .order('milestone', { ascending: false })
     .limit(1);
 
@@ -1555,7 +1597,9 @@ export async function applyReferralBenefitsToTotal(ownerRegistrationId: string, 
     discount = Number(benefit.benefit_value ?? 0);
   } else {
     const selectedCourses = await resolveSelectedCourses(courseIds);
-    discount = selectedCourses.reduce((max, course) => Math.max(max, course.price), 0);
+    const freeCount = Math.max(1, Math.floor(Number(benefit.benefit_value ?? 1)));
+    const sorted = [...selectedCourses].sort((a, b) => b.price - a.price);
+    discount = sorted.slice(0, freeCount).reduce((sum, course) => sum + course.price, 0);
   }
 
   const nextTotal = Math.max(total - discount, 0);
