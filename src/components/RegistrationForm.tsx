@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, User, Phone, Calendar, AlertCircle } from 'lucide-react';
-import { Course } from '@/lib/types';
+import { ArrowRight, User, Phone, Calendar, AlertCircle, History, RefreshCcw } from 'lucide-react';
+import { Course, RegistrationRecord } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
 import type { RegistrationDraft } from '@/lib/types';
 
 interface RegistrationFormProps {
   lang: 'ar' | 'en';
+  allCourses: Course[];
   selectedCourses: Course[];
   grantCode: string;
   grantData: { nameAr: string; nameEn: string; whatsappNumber: string } | null;
@@ -23,17 +24,28 @@ interface RegistrationFormProps {
   onSubmit: (data: { fullName: string; phone: string; age: number }) => Promise<void>;
   draftData: RegistrationDraft;
   onDraftChange: (draft: RegistrationDraft) => void;
+  existingRegistration: RegistrationRecord | null;
+  existingRegistrationAction: 'resend' | 'update' | null;
+  existingRegistrationError: string;
+  onResendExistingRegistration: () => Promise<void>;
+  onUpdateExistingRegistration: () => Promise<void>;
   supportWhatsappUrl: string;
 }
 
 export function RegistrationForm({
   lang,
+  allCourses,
   selectedCourses,
   calculations,
   onBack,
   onSubmit,
   draftData,
   onDraftChange,
+  existingRegistration,
+  existingRegistrationAction,
+  existingRegistrationError,
+  onResendExistingRegistration,
+  onUpdateExistingRegistration,
   supportWhatsappUrl,
 }: RegistrationFormProps) {
   const isAr = lang === 'ar';
@@ -65,6 +77,13 @@ export function RegistrationForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const existingCourses = existingRegistration
+    ? allCourses.filter((course) => existingRegistration.courses.includes(course.id))
+    : [];
+
+  const formattedExistingDate = existingRegistration?.createdAt
+    ? new Date(existingRegistration.createdAt).toLocaleString(isAr ? 'ar-EG' : 'en-US')
+    : isAr ? 'غير متاح' : 'Unavailable';
 
   const updateDraft = (nextFormData: typeof formData, nextAgreed = agreed) => {
     setFormData(nextFormData);
@@ -343,6 +362,97 @@ export function RegistrationForm({
               <p className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-center text-sm font-black text-destructive">
                 {submitError}
               </p>
+            )}
+            {existingRegistration && (
+              <div className="space-y-5 rounded-[1.8rem] border border-amber-300/40 bg-amber-50/80 p-6 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10">
+                <div className="space-y-2 text-right">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-xs font-black text-amber-700 dark:bg-amber-500/15 dark:text-amber-200">
+                    <History className="h-4 w-4" />
+                    {isAr ? 'لقد قمت بالحجز من قبل' : 'You have booked before'}
+                  </div>
+                  <h3 className="text-lg font-black text-foreground md:text-xl">
+                    {isAr
+                      ? 'وجدنا حجزًا سابقًا بنفس رقم الهاتف، لذلك لن ننشئ سجلًا جديدًا.'
+                      : 'We found a previous booking with the same phone number, so no new record will be created.'}
+                  </h3>
+                  <p className="text-sm font-bold leading-7 text-muted-foreground">
+                    {isAr
+                      ? 'يمكنك الآن إعادة إرسال تفاصيل حجزك الحالي، أو تحديث نفس الحجز بالكورسات المختارة حاليًا مع الاحتفاظ بنفس الكود وبياناتك الأساسية.'
+                      : 'You can resend your current booking details, or update the same booking with the currently selected courses while keeping the same code and core personal details.'}
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[1.4rem] border border-border/70 bg-card/70 p-4">
+                    <p className="text-sm font-black text-primary">{isAr ? 'بيانات الحجز السابق' : 'Previous booking data'}</p>
+                    <div className="mt-3 space-y-2 text-sm font-bold text-muted-foreground">
+                      <p>{isAr ? `الاسم: ${existingRegistration.fullName}` : `Name: ${existingRegistration.fullName}`}</p>
+                      <p>{isAr ? `الهاتف: ${existingRegistration.phone}` : `Phone: ${existingRegistration.phone}`}</p>
+                      <p>{isAr ? `كود الحجز: ${existingRegistration.registrationCode}` : `Booking Code: ${existingRegistration.registrationCode}`}</p>
+                      <p>{isAr ? `تاريخ الحجز: ${formattedExistingDate}` : `Booked at: ${formattedExistingDate}`}</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[1.4rem] border border-border/70 bg-card/70 p-4">
+                    <p className="text-sm font-black text-primary">{isAr ? 'تفاصيل الحجز الحالي' : 'Current booking details'}</p>
+                    <div className="mt-3 space-y-2 text-sm font-bold text-muted-foreground">
+                      <p>{isAr ? `الإجمالي: ${formatPrice(existingRegistration.totalPrice)} جنيه` : `Total: ${formatPrice(existingRegistration.totalPrice)} EGP`}</p>
+                      <p>{isAr ? `القسط الأول: ${formatPrice(existingRegistration.firstInstallment)} جنيه` : `1st installment: ${formatPrice(existingRegistration.firstInstallment)} EGP`}</p>
+                      <p>{isAr ? `القسط الثاني: ${formatPrice(existingRegistration.secondInstallment)} جنيه` : `2nd installment: ${formatPrice(existingRegistration.secondInstallment)} EGP`}</p>
+                      <p>{existingRegistration.grantCodeUsed ? (isAr ? `كود المنحة: ${existingRegistration.grantCodeUsed}` : `Grant code: ${existingRegistration.grantCodeUsed}`) : (isAr ? 'بدون كود منحة' : 'No grant code')}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.4rem] border border-border/70 bg-card/70 p-4">
+                  <p className="text-sm font-black text-primary">{isAr ? 'الكورسات المحجوزة سابقًا' : 'Previously booked courses'}</p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {existingCourses.length > 0 ? (
+                      existingCourses.map((course) => (
+                        <span key={course.id} className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-black text-primary">
+                          <span>{course.icon}</span>
+                          <span>{isAr ? course.nameAr : course.nameEn}</span>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm font-bold text-muted-foreground">
+                        {isAr ? 'تعذر مطابقة الكورسات السابقة مع الكتالوج الحالي.' : 'Unable to match previous courses with the current catalog.'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <button
+                    type="button"
+                    disabled={existingRegistrationAction !== null}
+                    onClick={() => void onResendExistingRegistration()}
+                    className="action-secondary inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-primary disabled:opacity-50"
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    {existingRegistrationAction === 'resend'
+                      ? (isAr ? 'جارٍ تجهيز التفاصيل...' : 'Preparing details...')
+                      : (isAr ? 'إعادة إرسال تفاصيل الحجز الحالي' : 'Resend current booking details')}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={existingRegistrationAction !== null}
+                    onClick={() => void onUpdateExistingRegistration()}
+                    className="action-primary inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-black disabled:opacity-50"
+                  >
+                    <History className="h-4 w-4" />
+                    {existingRegistrationAction === 'update'
+                      ? (isAr ? 'جارٍ تحديث الحجز...' : 'Updating booking...')
+                      : (isAr ? 'تحديث نفس الحجز بالكورسات الحالية' : 'Update the same booking with current courses')}
+                  </button>
+                </div>
+
+                {existingRegistrationError && (
+                  <p className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-center text-sm font-black text-destructive">
+                    {existingRegistrationError}
+                  </p>
+                )}
+              </div>
             )}
           </form>
         </div>

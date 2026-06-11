@@ -1,9 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import { ArrowRight, ArrowLeft, Check, Layers3, ShoppingCart, Sparkles, Tag } from 'lucide-react';
 import { DISCOUNT_RULES } from '@/lib/data';
 import { Course, LearningBundle } from '@/lib/types';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { QuizResult } from '@/components/PathQuiz';
 
 interface CourseSelectionProps {
@@ -40,37 +41,41 @@ export function CourseSelection({
   calculations,
 }: CourseSelectionProps) {
   const isAr = lang === 'ar';
-  const selectedCourseIds = selectedCourses.map((course) => course.id);
+  const shouldReduceMotion = useReducedMotion();
+  const selectedCourseIds = useMemo(() => selectedCourses.map((course) => course.id), [selectedCourses]);
+  const selectedCourseIdSet = useMemo(() => new Set(selectedCourseIds), [selectedCourseIds]);
 
-  const getBundlePricing = (bundle: LearningBundle) => {
-    const bundleCourses = courses.filter((course) => bundle.courseIds.includes(course.id));
-    const subtotal = bundleCourses.reduce((sum, course) => {
-      return sum + (grantData ? course.grantPrice : course.originalPrice);
-    }, 0);
+  const bundlePricingMap = useMemo(() => new Map(
+    bundles.map((bundle) => {
+      const bundleCourses = courses.filter((course) => bundle.courseIds.includes(course.id));
+      const subtotal = bundleCourses.reduce((sum, course) => {
+        return sum + (grantData ? course.grantPrice : course.originalPrice);
+      }, 0);
 
-    let countDiscount = 0;
-    for (const rule of DISCOUNT_RULES) {
-      if (bundle.courseIds.length >= rule.count) {
-        countDiscount = rule.discount;
+      let countDiscount = 0;
+      for (const rule of DISCOUNT_RULES) {
+        if (bundle.courseIds.length >= rule.count) {
+          countDiscount = rule.discount;
+        }
       }
-    }
 
-    const effectiveDiscount = Math.max(countDiscount, bundle.extraDiscount);
-    const total = Math.max(subtotal - effectiveDiscount, 0);
+      const effectiveDiscount = Math.max(countDiscount, bundle.extraDiscount);
+      const total = Math.max(subtotal - effectiveDiscount, 0);
 
-    return {
-      bundleCourses,
-      subtotal,
-      total,
-      effectiveDiscount,
-      savings: subtotal - total,
-      isActive:
-        bundle.courseIds.length === selectedCourseIds.length &&
-        bundle.courseIds.every((courseId) => selectedCourseIds.includes(courseId)),
-      isRecommended:
-        !!quizResult && bundle.courseIds.some((courseId) => quizResult.recommendedCourseIds.includes(courseId)),
-    };
-  };
+      return [bundle.id, {
+        bundleCourses,
+        subtotal,
+        total,
+        effectiveDiscount,
+        savings: subtotal - total,
+        isActive:
+          bundle.courseIds.length === selectedCourseIds.length &&
+          bundle.courseIds.every((courseId) => selectedCourseIdSet.has(courseId)),
+        isRecommended:
+          !!quizResult && bundle.courseIds.some((courseId) => quizResult.recommendedCourseIds.includes(courseId)),
+      }];
+    }),
+  ), [bundles, courses, grantData, quizResult, selectedCourseIdSet, selectedCourseIds.length]);
 
   return (
     <section className="min-h-screen px-4 py-20 bg-background relative overflow-hidden">
@@ -149,14 +154,17 @@ export function CourseSelection({
 
           <div className="grid gap-5 xl:grid-cols-2">
             {bundles.map((bundle, index) => {
-              const bundlePricing = getBundlePricing(bundle);
+              const bundlePricing = bundlePricingMap.get(bundle.id);
+              if (!bundlePricing) {
+                return null;
+              }
 
               return (
                 <motion.div
                   key={bundle.id}
-                  initial={{ opacity: 0, y: 16 }}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.06 * index, duration: 0.35 }}
+                  transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.06 * index, duration: 0.35 }}
                   className={`hero-panel rounded-[1.75rem] p-5 text-right md:p-6 ${
                     bundlePricing.isActive ? 'border-primary bg-primary/6 shadow-xl' : ''
                   }`}

@@ -38,6 +38,30 @@ export interface Registration extends RegistrationInput {
   createdAt?: string;
 }
 
+export interface RegistrationRecord {
+  id: string;
+  fullName: string;
+  phone: string;
+  age: number | null;
+  courses: number[];
+  totalPrice: number;
+  firstInstallment: number;
+  secondInstallment: number;
+  registrationCode: string;
+  grantCodeUsed?: string | null;
+  whatsappSent: boolean;
+  createdAt?: string | null;
+}
+
+export type RegistrationSubmissionMode = 'created' | 'existing' | 'updated';
+
+export interface RegistrationSubmissionResult {
+  success: boolean;
+  mode?: RegistrationSubmissionMode;
+  data?: RegistrationRecord;
+  errorMessage?: string;
+}
+
 export interface CartItem {
   course: Course;
   selected: boolean;

@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeft, ShieldCheck, Sparkles, Target, Trophy, WalletCards } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 interface HeroProps {
   lang: 'ar' | 'en';
@@ -12,6 +12,7 @@ interface HeroProps {
 export function Hero({ lang, onStart, experimentVariant = 'guided' }: HeroProps) {
   const isAr = lang === 'ar';
   const isDirectVariant = experimentVariant === 'direct';
+  const shouldReduceMotion = useReducedMotion();
 
   const valueCards = [
     {
@@ -63,9 +64,9 @@ export function Hero({ lang, onStart, experimentVariant = 'guided' }: HeroProps)
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-20 px-4">
       <div className="container mx-auto max-w-5xl">
         <motion.div 
-          initial={{ opacity: 0, y: 30 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8 }}
           className="text-center space-y-8"
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card/70 px-5 py-2 text-xs font-extrabold text-primary shadow-sm backdrop-blur-md md:text-sm">
@@ -99,9 +100,9 @@ export function Hero({ lang, onStart, experimentVariant = 'guided' }: HeroProps)
             {valueCards.map((card, index) => (
               <motion.div
                 key={card.title}
-                initial={{ opacity: 0, y: 18 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + index * 0.08, duration: 0.45 }}
+                transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.1 + index * 0.08, duration: 0.45 }}
                 className="glass-panel flex flex-col gap-3 rounded-[1.5rem] p-5"
               >
                 <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -195,9 +196,9 @@ export function Hero({ lang, onStart, experimentVariant = 'guided' }: HeroProps)
             ].map((feature, i) => (
               <motion.div 
                 key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 + i * 0.1 }}
+                transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.4 + i * 0.1 }}
                 className="glass-panel flex flex-col items-center gap-2 rounded-[1.75rem] p-5 text-center group hover:border-primary/40"
               >
                 <div className="rounded-full bg-primary/10 p-3 text-primary group-hover:bg-primary group-hover:text-white transition-colors">

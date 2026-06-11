@@ -11,8 +11,9 @@ interface SuccessPageProps {
   registrationData: {
     fullName: string;
     phone: string;
-    age: number;
+    age: number | null;
     registrationCode: string;
+    mode: 'created' | 'updated' | 'resent';
   };
   selectedCourses: Course[];
   grantData: { nameAr: string; nameEn: string; whatsappNumber: string } | null;
@@ -41,6 +42,22 @@ export function SuccessPage({
   const [countdown, setCountdown] = useState(5);
   const [autoOpened, setAutoOpened] = useState(false);
   const openedRef = useRef(false);
+  const successTitle = registrationData.mode === 'created'
+    ? (isAr ? 'تم التسجيل بنجاح!' : 'Registration completed!')
+    : registrationData.mode === 'updated'
+      ? (isAr ? 'تم تحديث حجزك الحالي' : 'Your existing booking was updated')
+      : (isAr ? 'تم استرجاع حجزك الحالي' : 'Your current booking is ready again');
+  const successSubtitle = registrationData.mode === 'created'
+    ? (isAr
+      ? 'شكراً لتسجيلك في مبادرة ذات. سيتم فتح واتساب تلقائيًا لإرسال رسالة تأكيد الحجز، ويجب إرسالها فورًا حتى يتم تثبيت مكانك بشكل نهائي.'
+      : 'Thank you for registering. WhatsApp will open automatically to send the booking confirmation message, and it must be sent immediately to secure your spot.')
+    : registrationData.mode === 'updated'
+      ? (isAr
+        ? 'تم تحديث نفس الحجز السابق بالكورسات الحالية دون إنشاء سجل جديد، وسيتم فتح واتساب لإعادة إرسال التفاصيل المحدثة.'
+        : 'The same previous booking has been updated with your current courses without creating a new record. WhatsApp will open to resend the updated details.')
+      : (isAr
+        ? 'تم العثور على حجزك السابق دون إنشاء سجل جديد، وسيتم فتح واتساب لإعادة إرسال نفس التفاصيل الحالية.'
+        : 'Your previous booking was found without creating a new record, and WhatsApp will open to resend the same details.');
   
   const { expiryDay, expiryDateStr } = useMemo(() => {
     const expiryDate = new Date();
@@ -61,7 +78,7 @@ export function SuccessPage({
       ? `مرحباً، أرغب في تأكيد الحجز:
 الاسم: ${registrationData.fullName}
 الهاتف: ${registrationData.phone}
-العمر: ${registrationData.age}
+العمر: ${registrationData.age ?? '-'}
 الكود: ${registrationData.registrationCode}
 الكورسات: ${selectedCourses.map(c => isAr ? c.nameAr : c.nameEn).join(', ')}
 
@@ -74,7 +91,7 @@ export function SuccessPage({
       : `Hello, I'd like to confirm my registration:
 Name: ${registrationData.fullName}
 Phone: ${registrationData.phone}
-Age: ${registrationData.age}
+Age: ${registrationData.age ?? '-'}
 Code: ${registrationData.registrationCode}
 Courses: ${selectedCourses.map(c => isAr ? c.nameAr : c.nameEn).join(', ')}
 
@@ -139,12 +156,10 @@ Payment Details:
 
           <div className="space-y-6 pt-8">
             <h1 className="section-title font-black title-font text-success">
-              {isAr ? 'تم التسجيل بنجاح!' : 'Success!'}
+              {successTitle}
             </h1>
             <p className="section-subtitle font-bold">
-              {isAr 
-                ? 'شكراً لتسجيلك في مبادرة ذات. سيتم فتح واتساب تلقائيًا لإرسال رسالة تأكيد الحجز، ويجب إرسالها فورًا حتى يتم تثبيت مكانك بشكل نهائي.'
-                : 'Thank you for registering. WhatsApp will open automatically to send the booking confirmation message, and it must be sent immediately to secure your spot.'}
+              {successSubtitle}
             </p>
           </div>
           
@@ -182,7 +197,11 @@ Payment Details:
                 </p>
                 <p className="flex justify-between">
                   <span>{isAr ? 'العمر:' : 'Age:'}</span>
-                  <span className="text-foreground">{registrationData.age} {isAr ? 'عام' : 'years'}</span>
+                  <span className="text-foreground">
+                    {registrationData.age
+                      ? `${registrationData.age} ${isAr ? 'عام' : 'years'}`
+                      : (isAr ? 'غير مسجل' : 'Not provided')}
+                  </span>
                 </p>
               </div>
             </div>

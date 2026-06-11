@@ -1,10 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import { ArrowRight, ArrowLeft, CheckCircle2, MessageCircle, ShoppingCart, Sparkles, Tag, ReceiptText } from 'lucide-react';
 import { DISCOUNT_RULES, SMART_BUNDLES } from '@/lib/data';
 import { Course } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { QuizResult } from '@/components/PathQuiz';
 
 interface BasketProps {
@@ -39,42 +40,57 @@ export function Basket({
   supportWhatsappUrl,
 }: BasketProps) {
   const isAr = lang === 'ar';
-  const displayedCoursePrice = selectedCourses.length === 0
-    ? 0
-    : (grantData ? selectedCourses[0].grantPrice : selectedCourses[0].originalPrice);
-  
-  const applicableDiscount = DISCOUNT_RULES.find(
-    rule => selectedCourses.length >= rule.count
+  const shouldReduceMotion = useReducedMotion();
+  const selectedIds = useMemo(() => selectedCourses.map((course) => course.id), [selectedCourses]);
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const displayedCoursePrice = useMemo(
+    () => (selectedCourses.length === 0
+      ? 0
+      : (grantData ? selectedCourses[0].grantPrice : selectedCourses[0].originalPrice)),
+    [grantData, selectedCourses]
   );
 
-  const suggestedBundle = SMART_BUNDLES
-    .map((bundle) => {
-      const selectedIds = selectedCourses.map((course) => course.id);
-      const missingCourseIds = bundle.courseIds.filter((courseId) => !selectedIds.includes(courseId));
-      const matchedCount = bundle.courseIds.length - missingCourseIds.length;
-
-      return {
-        bundle,
-        matchedCount,
-        missingCourseIds,
-      };
-    })
-    .filter((entry) => entry.matchedCount > 0 && entry.missingCourseIds.length > 0)
-    .sort((a, b) => b.matchedCount - a.matchedCount)[0];
-
-  const quizSuggestedCourseId = quizResult?.recommendedCourseIds.find(
-    (courseId) => !selectedCourses.some((course) => course.id === courseId)
+  const applicableDiscount = useMemo(
+    () => DISCOUNT_RULES.find((rule) => selectedCourses.length >= rule.count),
+    [selectedCourses.length]
   );
 
-  const suggestedCourse = quizSuggestedCourseId
-    ? allCourses.find((course) => course.id === quizSuggestedCourseId) ?? null
-    : suggestedBundle
-      ? allCourses.find((course) => course.id === suggestedBundle.missingCourseIds[0]) ?? null
-      : null;
+  const suggestedBundle = useMemo(
+    () =>
+      SMART_BUNDLES
+        .map((bundle) => {
+          const missingCourseIds = bundle.courseIds.filter((courseId) => !selectedIdSet.has(courseId));
+          const matchedCount = bundle.courseIds.length - missingCourseIds.length;
 
-  const suggestedCoursePrice = suggestedCourse
-    ? (grantData ? suggestedCourse.grantPrice : suggestedCourse.originalPrice)
-    : 0;
+          return {
+            bundle,
+            matchedCount,
+            missingCourseIds,
+          };
+        })
+        .filter((entry) => entry.matchedCount > 0 && entry.missingCourseIds.length > 0)
+        .sort((a, b) => b.matchedCount - a.matchedCount)[0],
+    [selectedIdSet]
+  );
+
+  const quizSuggestedCourseId = useMemo(
+    () => quizResult?.recommendedCourseIds.find((courseId) => !selectedIdSet.has(courseId)),
+    [quizResult, selectedIdSet]
+  );
+
+  const suggestedCourse = useMemo(
+    () => (quizSuggestedCourseId
+      ? allCourses.find((course) => course.id === quizSuggestedCourseId) ?? null
+      : suggestedBundle
+        ? allCourses.find((course) => course.id === suggestedBundle.missingCourseIds[0]) ?? null
+        : null),
+    [allCourses, quizSuggestedCourseId, suggestedBundle]
+  );
+
+  const suggestedCoursePrice = useMemo(
+    () => (suggestedCourse ? (grantData ? suggestedCourse.grantPrice : suggestedCourse.originalPrice) : 0),
+    [grantData, suggestedCourse]
+  );
 
   return (
     <section className="min-h-screen px-4 py-20 bg-background relative overflow-hidden">
@@ -103,9 +119,9 @@ export function Basket({
           {selectedCourses.map((course, index) => (
             <motion.div 
               key={course.id}
-              initial={{ opacity: 0, x: -20 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { delay: index * 0.1 }}
               className="glass-panel flex items-center justify-between rounded-[1.75rem] p-5 transition-all group hover:border-primary/40"
             >
               <div className="flex items-center gap-5">

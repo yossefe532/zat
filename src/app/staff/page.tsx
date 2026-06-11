@@ -1,12 +1,28 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpenCheck, KeyRound, LogOut, WalletCards } from 'lucide-react';
 import { LoginPanel } from '@/components/console/LoginPanel';
 import { MetricCard } from '@/components/console/MetricCard';
-import { StudentRecordsTable } from '@/components/console/StudentRecordsTable';
 import { StatusBadge } from '@/components/console/StatusBadge';
 import type { CourseSnapshot, StudentSummary } from '@/lib/portal';
+
+const StudentRecordsTable = dynamic(
+  () => import('@/components/console/StudentRecordsTable').then((module) => module.StudentRecordsTable),
+  {
+    loading: () => (
+      <section className="hero-panel rounded-[2rem] p-6">
+        <p className="text-sm font-black text-muted-foreground">جارٍ تحميل سجلات الطلاب...</p>
+      </section>
+    ),
+  }
+);
+
+const deferredSectionStyle: CSSProperties = {
+  contentVisibility: 'auto',
+  containIntrinsicSize: '820px',
+};
 
 type SessionActor = {
   role: 'admin' | 'employee';
@@ -259,7 +275,7 @@ export default function StaffPage() {
           <MetricCard title="الأكواد" value={`${activeCodesCount}`} hint="الأكواد السارية حاليًا" icon={KeyRound} />
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[0.95fr,1.05fr]">
+        <section className="grid gap-6 xl:grid-cols-[0.95fr,1.05fr]" style={deferredSectionStyle}>
           <form
             className="hero-panel rounded-[2rem] p-5 md:p-6"
             onSubmit={(event) => {

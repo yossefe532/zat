@@ -1,9 +1,10 @@
 'use server';
 
 import { DEFAULT_GRANT_CODES } from '@/lib/data';
+import { buildRegistrationPhoneCandidates, normalizeRegistrantName } from '@/lib/registration-booking';
 import { getSupabaseClient } from '@/lib/supabase';
-import { createRegistrationCodeCandidate } from '@/lib/utils';
-import { RegistrationInput } from '@/lib/types';
+import { createRegistrationCodeCandidate, normalizePhoneNumber } from '@/lib/utils';
+import type { RegistrationInput, RegistrationRecord, RegistrationSubmissionResult } from '@/lib/types';
 
 type GrantCodeRow = {
   code: string;
@@ -12,6 +13,23 @@ type GrantCodeRow = {
   whatsapp_number: string;
   is_active: boolean;
 };
+
+type RegistrationRow = {
+  id: string;
+  full_name: string;
+  phone: string;
+  age: number | null;
+  courses: number[] | null;
+  total_price: number | string;
+  first_installment: number | string | null;
+  second_installment: number | string | null;
+  registration_code: string;
+  grant_code_used: string | null;
+  whatsapp_sent: boolean | null;
+  created_at: string | null;
+};
+
+const registrationSelectFields = 'id, full_name, phone, age, courses, total_price, first_installment, second_installment, registration_code, grant_code_used, whatsapp_sent, created_at';
 
 function mapGrantCodeRow(grant: GrantCodeRow) {
   return {
@@ -37,6 +55,47 @@ function getFallbackGrantCode(code: string): GrantCodeRow | null {
     whatsapp_number: fallbackGrant.whatsappNumber,
     is_active: fallbackGrant.isActive,
   };
+}
+
+function mapRegistrationRow(row: RegistrationRow): RegistrationRecord {
+  return {
+    id: row.id,
+    fullName: row.full_name,
+    phone: row.phone,
+    age: row.age,
+    courses: Array.isArray(row.courses)
+      ? row.courses.map((courseId) => Number(courseId)).filter((courseId) => Number.isFinite(courseId))
+      : [],
+    totalPrice: Number(row.total_price ?? 0),
+    firstInstallment: Number(row.first_installment ?? 0),
+    secondInstallment: Number(row.second_installment ?? 0),
+    registrationCode: row.registration_code,
+    grantCodeUsed: row.grant_code_used,
+    whatsappSent: Boolean(row.whatsapp_sent),
+    createdAt: row.created_at,
+  };
+}
+
+async function findExistingRegistrationRow(phone: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error('Supabase is not configured');
+  }
+
+  const phoneCandidates = buildRegistrationPhoneCandidates(phone);
+  const { data, error } = await supabase
+    .from('registrations')
+    .select(registrationSelectFields)
+    .in('phone', phoneCandidates)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+
+  const existing = (data?.[0] ?? null) as RegistrationRow | null;
+  return existing;
 }
 
 async function generateUniqueRegistrationCode(grantCodeUsed?: string) {
@@ -65,19 +124,39 @@ async function generateUniqueRegistrationCode(grantCodeUsed?: string) {
   throw new Error('Unable to generate a unique registration code');
 }
 
-export async function submitRegistration(data: RegistrationInput) {
+export async function submitRegistration(data: RegistrationInput): Promise<RegistrationSubmissionResult> {
   try {
     const supabase = getSupabaseClient();
     if (!supabase) {
       throw new Error('Supabase is not configured');
     }
 
+    const normalizedPhone = normalizePhoneNumber(data.phone);
+    const sanitizedFullName = data.fullName.trim().replace(/\s+/g, ' ');
+    const normalizedName = normalizeRegistrantName(sanitizedFullName);
+
+    if (!normalizedName) {
+      throw new Error('Full name is required');
+    }
+
+    const existingRegistration = await findExistingRegistrationRow(normalizedPhone);
+
+    if (existingRegistration) {
+      const existingRecord = mapRegistrationRow(existingRegistration);
+
+      return {
+        success: true,
+        mode: 'existing',
+        data: existingRecord,
+      };
+    }
+
     const registrationCode = await generateUniqueRegistrationCode(data.grantCodeUsed);
     const { data: result, error } = await supabase
       .from('registrations')
       .insert([{
-        full_name: data.fullName,
-        phone: data.phone,
+        full_name: sanitizedFullName,
+        phone: normalizedPhone,
         age: data.age,
         courses: data.courses,
         total_price: data.totalPrice,
@@ -86,23 +165,65 @@ export async function submitRegistration(data: RegistrationInput) {
         registration_code: registrationCode,
         grant_code_used: data.grantCodeUsed || null
       }])
-      .select()
-      .single();
+      .select(registrationSelectFields)
+      .single<RegistrationRow>();
 
     if (error) throw error;
 
     return {
       success: true,
-      data: {
+      mode: 'created',
+      data: mapRegistrationRow({
         ...result,
         registration_code: registrationCode,
-      },
+      } as RegistrationRow),
     };
   } catch (error) {
     console.error('Registration error:', error);
     return {
       success: false,
       errorMessage: error instanceof Error ? error.message : 'Registration failed',
+    };
+  }
+}
+
+export async function updateExistingRegistration(
+  registrationId: string,
+  data: Pick<RegistrationInput, 'courses' | 'totalPrice' | 'firstInstallment' | 'secondInstallment' | 'grantCodeUsed'>,
+): Promise<RegistrationSubmissionResult> {
+  try {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw new Error('Supabase is not configured');
+    }
+
+    const { data: result, error } = await supabase
+      .from('registrations')
+      .update({
+        courses: data.courses,
+        total_price: data.totalPrice,
+        first_installment: data.firstInstallment,
+        second_installment: data.secondInstallment,
+        grant_code_used: data.grantCodeUsed || null,
+      })
+      .eq('id', registrationId)
+      .select(registrationSelectFields)
+      .single<RegistrationRow>();
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      success: true,
+      mode: 'updated',
+      data: mapRegistrationRow(result),
+    };
+  } catch (error) {
+    console.error('Update registration error:', error);
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'Update registration failed',
     };
   }
 }
