@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Sparkles, Target, Trophy, WalletCards } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { EDUCO_LINKTREE_URL } from '@/lib/site-links';
 
 interface HeroProps {
   lang: 'ar' | 'en';
@@ -82,6 +84,29 @@ export function Hero({ lang, onStart, experimentVariant = 'guided' }: HeroProps)
               : (isDirectVariant
                 ? 'Start now and see your final price and savings before any confirmation step.'
                 : 'Registration is currently open, and you can see your final price and savings before confirming.')}
+          </div>
+
+          <div className="hero-panel mx-auto max-w-3xl rounded-[1.5rem] p-4 text-right md:p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-black text-primary md:text-base">
+                  {isAr ? 'جميع روابط إيديكون في مكان واحد' : 'All Educo links in one place'}
+                </p>
+                <p className="text-xs font-bold leading-6 text-muted-foreground md:text-sm">
+                  {isAr
+                    ? 'إذا كنت تريد الوصول السريع لكل روابط المنصة الرسمية، استخدم الرابط التالي مباشرة.'
+                    : 'Use the official Linktree for quick access to all Educo platform links.'}
+                </p>
+              </div>
+              <a
+                href={EDUCO_LINKTREE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="action-primary inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-black md:min-w-[15rem]"
+              >
+                {isAr ? 'فتح روابط إيديكون' : 'Open Educo Links'}
+              </a>
+            </div>
           </div>
           
           <h1 className="section-title mx-auto max-w-4xl font-black text-primary">
@@ -177,6 +202,13 @@ export function Hero({ lang, onStart, experimentVariant = 'guided' }: HeroProps)
                 ? (isDirectVariant ? 'اعرف خطوتك التالية' : 'اعرف أفضل مسار لك')
                 : (isDirectVariant ? 'Find Your Next Step' : 'Find Your Best Path')}
             </button>
+            <Link
+              href="/referrals/guide"
+              className="action-secondary inline-flex items-center justify-center gap-3 rounded-3xl px-8 py-4 text-base font-black text-foreground hover:border-primary/35 hover:text-primary"
+            >
+              <Sparkles className="h-5 w-5 text-primary" />
+              {isAr ? 'الأسئلة الشائعة والدليل' : 'FAQ & Guide'}
+            </Link>
           </div>
 
           <div className="grid max-w-3xl grid-cols-1 gap-5 pt-12 mx-auto md:grid-cols-3">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Kufi_Arabic } from "next/font/google";
 import "./globals.css";
+import { FaqSidebar } from "@/components/FaqSidebar";
 
 const kufaFont = Noto_Kufi_Arabic({
   subsets: ["arabic"],
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className="h-full">
       <body className={`${kufaFont.className} ${kufaFont.variable} min-h-screen flex flex-col antialiased`}>
         {children}
+        <FaqSidebar />
       </body>
     </html>
   );

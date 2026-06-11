@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MessageCircle, Copy, RefreshCw, Home, ShieldCheck, Sparkles } from 'lucide-react';
+import { MessageCircle, Copy, RefreshCw, Home, ShieldCheck, Sparkles, ExternalLink } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { buildWhatsappLink, formatPrice } from '@/lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
+import { EDUCO_LINKTREE_URL } from '@/lib/site-links';
 
 interface SuccessPageProps {
   lang: 'ar' | 'en';
@@ -297,6 +298,30 @@ Payment Details:
                   ? `تأكيد الحجز عبر واتساب خلال ${countdown} ثوانٍ`
                   : `Confirm via WhatsApp in ${countdown}s`}
             </a>
+
+            <div className="metric-card rounded-[1.6rem] p-5 text-right">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-black text-primary md:text-base">
+                    {isAr ? 'روابط إيديكون الكاملة' : 'Educo official links'}
+                  </p>
+                  <p className="text-sm font-bold leading-7 text-muted-foreground md:text-base">
+                    {isAr
+                      ? 'تم جمع كل روابط منصة إيديكون في رابط واحد واضح حتى تتمكن من الرجوع إليه بسهولة بعد إتمام التسجيل.'
+                      : 'All Educo platform links are collected in one clear place so you can return to them easily after registration.'}
+                  </p>
+                </div>
+                <a
+                  href={EDUCO_LINKTREE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="action-primary inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black md:min-w-[15rem]"
+                >
+                  {isAr ? 'فتح Linktree إيديكون' : 'Open Educo Linktree'}
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
 
             {suggestedNextCourse && (
               <a
