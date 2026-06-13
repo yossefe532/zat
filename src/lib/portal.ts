@@ -725,6 +725,19 @@ export async function createEmployee(
     throw new Error(error?.message ?? 'تعذر إنشاء الموظف');
   }
 
+  // Create corresponding grant_code entry
+  await supabase
+    .from('grant_codes')
+    .insert([{
+      code: data.staff_code,
+      name_ar: data.full_name,
+      name_en: data.full_name,
+      whatsapp_number: normalizedPhone,
+      is_active: true
+    }])
+    .select()
+    .single();
+
   await logAudit(actor, 'create_employee', 'employees', data.id, {
     employeeNumber: data.employee_number,
     staffCode: data.staff_code,
@@ -755,6 +768,12 @@ export async function updateEmployeeStatus(
     throw new Error(error?.message ?? 'تعذر تحديث حالة الموظف');
   }
 
+  // Update grant_code's is_active status
+  await supabase
+    .from('grant_codes')
+    .update({ is_active: isActive })
+    .eq('code', data.staff_code);
+
   await logAudit(actor, 'toggle_employee_status', 'employees', employeeId, { isActive });
   return mapEmployee(data);
 }
@@ -779,6 +798,18 @@ export async function updateEmployee(
   }
 
   const supabase = requireServiceSupabaseClient();
+  
+  // Get current employee before updating
+  const { data: currentEmployee, error: fetchError } = await supabase
+    .from('employees')
+    .select('staff_code')
+    .eq('id', employeeId)
+    .maybeSingle<{ staff_code: string }>();
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
   const normalizedPhone = normalizePhoneNumber(input.whatsappNumber);
   const hierarchy = await resolveEmployeeHierarchy(input.parentEmployeeId ?? null);
 
@@ -786,13 +817,15 @@ export async function updateEmployee(
     throw new Error('لا يمكن ربط الموظف بنفسه كموظف رئيسي');
   }
 
+  const newStaffCode = sanitizeShortEmployeeCode(input.staffCode);
+
   const updatePayload: Record<string, unknown> = {
     employee_number: sanitizeShortEmployeeCode(input.employeeNumber),
     full_name: input.fullName.trim(),
     whatsapp_encrypted: encryptText(normalizedPhone),
     whatsapp_hash: hashValue(normalizedPhone),
     whatsapp_last4: normalizedPhone.slice(-4),
-    staff_code: sanitizeShortEmployeeCode(input.staffCode),
+    staff_code: newStaffCode,
     login_identifier: sanitizeShortEmployeeCode(input.loginIdentifier),
     default_code_validity_days: input.defaultCodeValidityDays,
     is_active: input.isActive,
@@ -816,6 +849,27 @@ export async function updateEmployee(
 
   if (error || !data) {
     throw new Error(error?.message ?? 'تعذر تحديث الكود');
+  }
+
+  // Update grant_code
+  if (currentEmployee && currentEmployee.staff_code !== newStaffCode) {
+    // If staff code changed, delete old grant_code and create new one
+    await supabase.from('grant_codes').delete().eq('code', currentEmployee.staff_code);
+    await supabase.from('grant_codes').insert([{
+      code: newStaffCode,
+      name_ar: data.full_name,
+      name_en: data.full_name,
+      whatsapp_number: normalizedPhone,
+      is_active: data.is_active
+    }]);
+  } else {
+    // Just update the existing grant_code
+    await supabase.from('grant_codes').update({
+      name_ar: data.full_name,
+      name_en: data.full_name,
+      whatsapp_number: normalizedPhone,
+      is_active: data.is_active
+    }).eq('code', newStaffCode);
   }
 
   await logAudit(actor, 'update_employee_code', 'employees', employeeId, {
@@ -871,6 +925,11 @@ export async function deleteEmployee(employeeId: string, actor: SessionActor) {
       updated_at: new Date().toISOString(),
     })
     .eq('root_employee_id', employeeId);
+
+  // Deactivate or delete the grant code
+  if (existing?.staff_code) {
+    await supabase.from('grant_codes').update({ is_active: false }).eq('code', existing.staff_code);
+  }
 
   const { error } = await supabase.from('employees').delete().eq('id', employeeId);
 

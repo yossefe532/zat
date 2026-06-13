@@ -366,21 +366,65 @@ export async function verifyGrantCodeAction(code: string) {
   }
 
   try {
-    const { data, error } = await supabase
+    // First check grant_codes table
+    const { data: grantData, error: grantError } = await supabase
       .from('grant_codes')
       .select('*')
       .eq('code', normalizedCode)
       .eq('is_active', true)
       .maybeSingle();
 
-    if (error) {
-      throw error;
+    if (grantError) {
+      throw grantError;
     }
 
-    if (data) {
+    if (grantData) {
       return {
         success: true,
-        data: mapGrantCodeRow(data as GrantCodeRow),
+        data: mapGrantCodeRow(grantData as GrantCodeRow),
+      };
+    }
+
+    // If not found in grant_codes, check employees table
+    const { data: employeeData, error: employeeError } = await supabase
+      .from('employees')
+      .select('staff_code, full_name, whatsapp_encrypted, is_active')
+      .eq('staff_code', normalizedCode)
+      .eq('is_active', true)
+      .maybeSingle<{ staff_code: string; full_name: string; whatsapp_encrypted: string; is_active: boolean }>();
+
+    if (employeeError) {
+      throw employeeError;
+    }
+
+    if (employeeData) {
+      // If found in employees, decrypt the whatsapp number and return as grant code
+      const { decryptText } = await import('@/lib/security');
+      const whatsappNumber = decryptText(employeeData.whatsapp_encrypted);
+      
+      // Also, create the missing grant_code entry for this employee
+      const serviceSupabase = (await import('@/lib/server-supabase')).requireServiceSupabaseClient();
+      try {
+        await serviceSupabase.from('grant_codes').insert([{
+          code: employeeData.staff_code,
+          name_ar: employeeData.full_name,
+          name_en: employeeData.full_name,
+          whatsapp_number: whatsappNumber,
+          is_active: true
+        }]).select().single();
+      } catch {
+        // Ignore if already exists
+      }
+
+      return {
+        success: true,
+        data: {
+          code: employeeData.staff_code,
+          nameAr: employeeData.full_name,
+          nameEn: employeeData.full_name,
+          whatsappNumber: whatsappNumber,
+          isActive: true
+        },
       };
     }
 
