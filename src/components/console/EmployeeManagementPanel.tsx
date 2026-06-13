@@ -13,16 +13,20 @@ type EmployeeManagementPanelProps = {
     fullName: string;
     whatsappNumber: string;
     defaultCodeValidityDays: number;
+    parentEmployeeId?: string | null;
   }) => void;
   onToggleStatus: (employeeId: string, isActive: boolean) => void;
   onUpdate: (
     employeeId: string,
     payload: {
+      employeeNumber: string;
       fullName: string;
       whatsappNumber: string;
       defaultCodeValidityDays: number;
       staffCode: string;
       loginIdentifier: string;
+      newPassword?: string;
+      parentEmployeeId?: string | null;
       isActive: boolean;
     },
   ) => void;
@@ -51,6 +55,7 @@ export function EmployeeManagementPanel({
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name' | 'code'>('newest');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(employees[0]?.id ?? null);
+  const [createParentEmployeeId, setCreateParentEmployeeId] = useState('');
 
   const filteredEmployees = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -64,6 +69,8 @@ export function EmployeeManagementPanel({
           employee.loginIdentifier,
           employee.whatsappNumber,
           employee.createdBy ?? '',
+          employee.parentEmployeeName ?? '',
+          employee.rootEmployeeName ?? '',
         ]
           .join(' ')
           .toLowerCase()
@@ -103,6 +110,14 @@ export function EmployeeManagementPanel({
   const linkedStudentsCount = selectedEmployee
     ? students.filter((student) => student.employeeId === selectedEmployee.id).length
     : 0;
+  const subordinateEmployees = selectedEmployee
+    ? employees.filter((employee) => employee.parentEmployeeId === selectedEmployee.id)
+    : [];
+
+  const availableManagers = useMemo(
+    () => employees.filter((employee) => employee.id !== selectedEmployee?.id),
+    [employees, selectedEmployee?.id],
+  );
 
   return (
     <section className="grid gap-6 xl:grid-cols-[0.88fr,1.12fr]">
@@ -128,8 +143,10 @@ export function EmployeeManagementPanel({
               fullName: String(formData.get('fullName') ?? ''),
               whatsappNumber: String(formData.get('whatsappNumber') ?? ''),
               defaultCodeValidityDays: Number(formData.get('defaultCodeValidityDays') ?? 7),
+              parentEmployeeId: createParentEmployeeId || null,
             });
             event.currentTarget.reset();
+            setCreateParentEmployeeId('');
           }}
         >
           <input
@@ -153,6 +170,18 @@ export function EmployeeManagementPanel({
             className="field-shell w-full rounded-2xl px-4 py-3"
             required
           />
+          <select
+            value={createParentEmployeeId}
+            onChange={(event) => setCreateParentEmployeeId(event.target.value)}
+            className="field-shell w-full rounded-2xl px-4 py-3"
+          >
+            <option value="">إنشاء موظف رئيسي مستقل</option>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>
+                {employee.fullName} - {employee.staffCode}
+              </option>
+            ))}
+          </select>
           <button className="action-primary w-full rounded-2xl px-4 py-3 text-sm font-black">
             إنشاء بيانات الاعتماد
           </button>
@@ -175,9 +204,9 @@ export function EmployeeManagementPanel({
         <div className="table-shell rounded-[2rem] p-5 md:p-6">
           <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h2 className="text-2xl font-black text-foreground">لوحة إدارة الأكواد</h2>
+              <h2 className="text-2xl font-black text-foreground">لوحة إدارة الموظفين والأكواد</h2>
               <p className="text-sm text-muted-foreground">
-                عرض كل الأكواد المرتبطة بالمستخدمين مع الحالة الفعلية، البحث، التصفية، الفرز، والتعديل الكامل.
+                تعديل كامل لبيانات كل موظف، تغيير اسم المستخدم وكلمة المرور، إدارة الأكواد الرئيسية والفرعية، والحذف المباشر.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -223,10 +252,10 @@ export function EmployeeManagementPanel({
           </div>
 
           <div className="mt-5 overflow-hidden rounded-[1.6rem] border border-border/70">
-            <div className="hidden grid-cols-[1.3fr,1fr,0.9fr,0.8fr,0.8fr] gap-3 bg-card/80 px-4 py-3 text-xs font-black text-muted-foreground md:grid">
+            <div className="hidden grid-cols-[1.1fr,1fr,0.9fr,0.7fr,1fr] gap-3 bg-card/80 px-4 py-3 text-xs font-black text-muted-foreground md:grid">
               <span>المستخدم / الكود</span>
-              <span>الأرقام المرتبطة</span>
-              <span>المنشئ</span>
+              <span>التبعية الإدارية</span>
+              <span>البيانات المرتبطة</span>
               <span>الحالة</span>
               <span>الإجراءات</span>
             </div>
@@ -237,25 +266,24 @@ export function EmployeeManagementPanel({
                 return (
                   <div
                     key={employee.id}
-                    className={`grid gap-4 px-4 py-4 transition-colors md:grid-cols-[1.3fr,1fr,0.9fr,0.8fr,0.8fr] ${
+                    className={`grid gap-4 px-4 py-4 transition-colors md:grid-cols-[1.1fr,1fr,0.9fr,0.7fr,1fr] ${
                       selectedEmployee?.id === employee.id ? 'bg-primary/5' : 'bg-transparent'
                     }`}
                   >
                     <div>
                       <p className="text-base font-black text-foreground">{employee.fullName}</p>
                       <p className="text-sm text-muted-foreground">
-                        {employee.staffCode} | {employee.loginIdentifier}
+                        {employee.staffCode} | {employee.loginIdentifier} | {employee.employeeNumber}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        رقم الموظف: {employee.employeeNumber}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{employee.parentEmployeeId ? 'كود فرعي' : 'كود رئيسي'}</p>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <p>الرئيسي: {employee.parentEmployeeName ?? 'لا يوجد'}</p>
+                      <p>الجذر: {employee.rootEmployeeName ?? employee.fullName}</p>
                     </div>
                     <div className="text-sm text-muted-foreground">
                       <p>واتساب: {employee.whatsappNumber}</p>
                       <p>طلبات مرتبطة: {linkedCount}</p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <p>{employee.createdBy ?? 'غير محدد'}</p>
                       <p>{new Date(employee.createdAt).toLocaleString('ar-EG')}</p>
                     </div>
                     <div className="flex items-start">
@@ -270,7 +298,7 @@ export function EmployeeManagementPanel({
                         className="action-secondary inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black text-primary"
                       >
                         <Eye className="h-4 w-4" />
-                        عرض
+                        عرض/تعديل
                       </button>
                       <button
                         type="button"
@@ -280,6 +308,15 @@ export function EmployeeManagementPanel({
                       >
                         <ShieldCheck className="h-4 w-4" />
                         {employee.isActive ? 'تعطيل' : 'تفعيل'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => onDelete(employee.id)}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-destructive px-3 py-2 text-xs font-black text-white disabled:opacity-60"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        حذف
                       </button>
                     </div>
                   </div>
@@ -311,20 +348,23 @@ export function EmployeeManagementPanel({
                 event.preventDefault();
                 const formData = new FormData(event.currentTarget);
                 onUpdate(selectedEmployee.id, {
+                  employeeNumber: String(formData.get('employeeNumber') ?? ''),
                   fullName: String(formData.get('fullName') ?? ''),
                   whatsappNumber: String(formData.get('whatsappNumber') ?? ''),
                   defaultCodeValidityDays: Number(formData.get('defaultCodeValidityDays') ?? 7),
                   staffCode: String(formData.get('staffCode') ?? ''),
                   loginIdentifier: String(formData.get('loginIdentifier') ?? ''),
+                  newPassword: String(formData.get('newPassword') ?? ''),
+                  parentEmployeeId: String(formData.get('parentEmployeeId') ?? '') || null,
                   isActive: formData.get('isActive') === 'on',
                 });
               }}
             >
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-black text-foreground">عرض تفصيلي وتعديل الكود</h3>
+                  <h3 className="text-2xl font-black text-foreground">عرض تفصيلي وتعديل الموظف</h3>
                   <p className="text-sm text-muted-foreground">
-                    تعديل الاسم، الرقم، الكود، معرّف الدخول، الصلاحية، والحالة من شاشة واحدة.
+                    تعديل كل البيانات من شاشة واحدة: الرقم، الاسم، اسم المستخدم، كلمة المرور، نوع التبعية، الصلاحية، والحالة.
                   </p>
                 </div>
                 <StatusBadge tone={selectedEmployee.isActive ? 'success' : 'danger'}>
@@ -333,6 +373,14 @@ export function EmployeeManagementPanel({
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
+                <input
+                  name="employeeNumber"
+                  defaultValue={selectedEmployee.employeeNumber}
+                  placeholder="رقم الموظف"
+                  maxLength={6}
+                  className="field-shell rounded-2xl px-4 py-3"
+                  required
+                />
                 <input
                   name="fullName"
                   defaultValue={selectedEmployee.fullName}
@@ -351,6 +399,7 @@ export function EmployeeManagementPanel({
                   name="staffCode"
                   defaultValue={selectedEmployee.staffCode}
                   placeholder="الكود"
+                  maxLength={6}
                   className="field-shell rounded-2xl px-4 py-3"
                   required
                 />
@@ -358,8 +407,15 @@ export function EmployeeManagementPanel({
                   name="loginIdentifier"
                   defaultValue={selectedEmployee.loginIdentifier}
                   placeholder="معرّف الدخول"
+                  maxLength={6}
                   className="field-shell rounded-2xl px-4 py-3"
                   required
+                />
+                <input
+                  name="newPassword"
+                  type="password"
+                  placeholder="كلمة مرور جديدة (اختياري)"
+                  className="field-shell rounded-2xl px-4 py-3"
                 />
                 <input
                   name="defaultCodeValidityDays"
@@ -371,6 +427,18 @@ export function EmployeeManagementPanel({
                   className="field-shell rounded-2xl px-4 py-3"
                   required
                 />
+                <select
+                  name="parentEmployeeId"
+                  defaultValue={selectedEmployee.parentEmployeeId ?? ''}
+                  className="field-shell rounded-2xl px-4 py-3"
+                >
+                  <option value="">بدون موظف رئيسي (كود رئيسي)</option>
+                  {availableManagers.map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.fullName} - {employee.staffCode}
+                    </option>
+                  ))}
+                </select>
                 <label className="field-shell flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-black">
                   <span>الحالة الفعلية للكود</span>
                   <input
@@ -384,16 +452,28 @@ export function EmployeeManagementPanel({
 
               <div className="mt-5 grid gap-3 md:grid-cols-4">
                 <div className="rounded-[1.4rem] bg-card/60 p-4 text-sm">
+                  <p className="text-muted-foreground">نوع الموظف</p>
+                  <p className="mt-1 font-black text-foreground">{selectedEmployee.parentEmployeeId ? 'فرعي' : 'رئيسي'}</p>
+                </div>
+                <div className="rounded-[1.4rem] bg-card/60 p-4 text-sm">
+                  <p className="text-muted-foreground">الموظف الرئيسي</p>
+                  <p className="mt-1 font-black text-foreground">{selectedEmployee.parentEmployeeName ?? 'لا يوجد'}</p>
+                </div>
+                <div className="rounded-[1.4rem] bg-card/60 p-4 text-sm">
+                  <p className="text-muted-foreground">الأكواد الفرعية</p>
+                  <p className="mt-1 font-black text-foreground">{subordinateEmployees.length}</p>
+                </div>
+                <div className="rounded-[1.4rem] bg-card/60 p-4 text-sm">
+                  <p className="text-muted-foreground">الطلاب المرتبطون مباشرة</p>
+                  <p className="mt-1 font-black text-foreground">{linkedStudentsCount}</p>
+                </div>
+                <div className="rounded-[1.4rem] bg-card/60 p-4 text-sm">
                   <p className="text-muted-foreground">المنشئ</p>
                   <p className="mt-1 font-black text-foreground">{selectedEmployee.createdBy ?? 'غير محدد'}</p>
                 </div>
                 <div className="rounded-[1.4rem] bg-card/60 p-4 text-sm">
-                  <p className="text-muted-foreground">رقم الموظف</p>
-                  <p className="mt-1 font-black text-foreground">{selectedEmployee.employeeNumber}</p>
-                </div>
-                <div className="rounded-[1.4rem] bg-card/60 p-4 text-sm">
-                  <p className="text-muted-foreground">سجلات مرتبطة</p>
-                  <p className="mt-1 font-black text-foreground">{linkedStudentsCount}</p>
+                  <p className="text-muted-foreground">الجذر الإداري</p>
+                  <p className="mt-1 font-black text-foreground">{selectedEmployee.rootEmployeeName ?? selectedEmployee.fullName}</p>
                 </div>
                 <div className="rounded-[1.4rem] bg-card/60 p-4 text-sm">
                   <p className="text-muted-foreground">تاريخ الإنشاء</p>
@@ -402,6 +482,27 @@ export function EmployeeManagementPanel({
                   </p>
                 </div>
               </div>
+
+              {subordinateEmployees.length > 0 ? (
+                <div className="mt-5 rounded-[1.5rem] border border-border/70 bg-card/50 p-4">
+                  <p className="text-sm font-black text-foreground">الأكواد الفرعية التابعة لهذا الموظف</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    {subordinateEmployees.map((employee) => (
+                      <button
+                        key={employee.id}
+                        type="button"
+                        onClick={() => setSelectedEmployeeId(employee.id)}
+                        className="rounded-[1.25rem] border border-border/70 bg-background/45 p-3 text-right hover:border-primary/25 hover:bg-primary/5"
+                      >
+                        <p className="font-black text-foreground">{employee.fullName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {employee.staffCode} | {employee.loginIdentifier}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
@@ -419,7 +520,7 @@ export function EmployeeManagementPanel({
                   className="action-secondary inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-primary disabled:opacity-60"
                 >
                   <ShieldCheck className="h-4 w-4" />
-                  {selectedEmployee.isActive ? 'تعطيل الكود' : 'تفعيل الكود'}
+                  {selectedEmployee.isActive ? 'تعطيل الموظف' : 'تفعيل الموظف'}
                 </button>
                 <button
                   type="button"
@@ -428,7 +529,7 @@ export function EmployeeManagementPanel({
                   className="inline-flex items-center gap-2 rounded-2xl bg-destructive px-4 py-3 text-sm font-black text-white disabled:opacity-60"
                 >
                   <Trash2 className="h-4 w-4" />
-                  حذف الكود
+                  حذف الموظف نهائيًا
                 </button>
               </div>
             </form>

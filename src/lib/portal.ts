@@ -38,6 +38,10 @@ type EmployeeRow = {
   default_code_validity_days: number;
   is_active: boolean;
   created_by: string | null;
+  parent_employee_id: string | null;
+  parent_employee_name: string | null;
+  root_employee_id: string | null;
+  root_employee_name: string | null;
   created_at: string;
 };
 
@@ -125,6 +129,10 @@ export type EmployeeSummary = {
   defaultCodeValidityDays: number;
   isActive: boolean;
   createdBy: string | null;
+  parentEmployeeId: string | null;
+  parentEmployeeName: string | null;
+  rootEmployeeId: string | null;
+  rootEmployeeName: string | null;
   createdAt: string;
 };
 
@@ -199,6 +207,32 @@ export type AdminOverview = {
 
 function normalizePhoneNumber(value: string) {
   return value.replace(/[^\d]/g, '');
+}
+
+const employeeSelectFields = [
+  'id',
+  'employee_number',
+  'full_name',
+  'whatsapp_encrypted',
+  'whatsapp_last4',
+  'staff_code',
+  'login_identifier',
+  'default_code_validity_days',
+  'is_active',
+  'created_by',
+  'parent_employee_id',
+  'parent_employee_name',
+  'root_employee_id',
+  'root_employee_name',
+  'created_at',
+].join(', ');
+
+function sanitizeShortEmployeeCode(value: string) {
+  return value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
+}
+
+function buildShortEmployeeCode(prefix: string, seed: string) {
+  return sanitizeShortEmployeeCode(`${prefix}${seed}`).slice(0, 6);
 }
 
 function toFallbackCourseCatalogItem(id: number): CourseCatalogItem | null {
@@ -292,11 +326,15 @@ function normalizeCourseInput(input: {
 }
 
 function formatEmployeeNumber(seed: string) {
-  return `EMP-${seed.toUpperCase()}`;
+  return buildShortEmployeeCode('E', seed);
 }
 
 function formatStaffCode(seed: string) {
-  return `ZT-${seed.toUpperCase()}`;
+  return buildShortEmployeeCode('S', seed);
+}
+
+function formatLoginIdentifier(seed: string) {
+  return buildShortEmployeeCode('L', seed);
 }
 
 function buildTempPassword() {
@@ -335,7 +373,7 @@ async function generateUniqueEmployeeIdentifiers() {
     const seed = randomToken(5).replace(/[^A-Za-z0-9]/g, '').slice(0, 5);
     const employeeNumber = formatEmployeeNumber(seed);
     const staffCode = formatStaffCode(seed);
-    const loginIdentifier = employeeNumber;
+    const loginIdentifier = formatLoginIdentifier(seed);
 
     const { data, error } = await supabase
       .from('employees')
@@ -357,11 +395,11 @@ async function generateUniqueEmployeeIdentifiers() {
 
 async function generateUniqueStudentCode(staffCode: string) {
   const supabase = requireServiceSupabaseClient();
-  const prefix = staffCode.replace(/[^A-Z0-9]/gi, '').slice(0, 6).toUpperCase();
+  const prefix = sanitizeShortEmployeeCode(staffCode).slice(0, 2).padEnd(2, 'X');
 
   for (let attempt = 0; attempt < 20; attempt += 1) {
-    const suffix = randomToken(4).replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase();
-    const finalCode = `ZAT-${prefix}-${suffix}`;
+    const suffix = randomToken(4).replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase().padEnd(4, '0');
+    const finalCode = `${prefix}${suffix}`.slice(0, 6);
     const { data, error } = await supabase
       .from('student_records')
       .select('id')
@@ -392,6 +430,10 @@ function mapEmployee(row: EmployeeRow): EmployeeSummary {
     defaultCodeValidityDays: row.default_code_validity_days,
     isActive: row.is_active,
     createdBy: row.created_by,
+    parentEmployeeId: row.parent_employee_id,
+    parentEmployeeName: row.parent_employee_name,
+    rootEmployeeId: row.root_employee_id,
+    rootEmployeeName: row.root_employee_name,
     createdAt: row.created_at,
   };
 }
@@ -582,28 +624,79 @@ export async function deleteCourse(courseId: number, actor: SessionActor) {
   await logAudit(actor, 'delete_course', 'courses', String(courseId), null);
 }
 
-export async function listEmployees() {
+async function resolveEmployeeHierarchy(parentEmployeeId?: string | null) {
+  if (!parentEmployeeId) {
+    return {
+      parentEmployeeId: null,
+      parentEmployeeName: null,
+      rootEmployeeId: null,
+      rootEmployeeName: null,
+    };
+  }
+
   const supabase = requireServiceSupabaseClient();
   const { data, error } = await supabase
     .from('employees')
-    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_by, created_at')
-    .order('created_at', { ascending: false });
+    .select('id, full_name, root_employee_id, root_employee_name')
+    .eq('id', parentEmployeeId)
+    .maybeSingle<{
+      id: string;
+      full_name: string;
+      root_employee_id: string | null;
+      root_employee_name: string | null;
+    }>();
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return ((data ?? []) as EmployeeRow[]).map(mapEmployee);
+  if (!data) {
+    throw new Error('الموظف الرئيسي المحدد غير موجود');
+  }
+
+  return {
+    parentEmployeeId: data.id,
+    parentEmployeeName: data.full_name,
+    rootEmployeeId: data.root_employee_id ?? data.id,
+    rootEmployeeName: data.root_employee_name ?? data.full_name,
+  };
+}
+
+export async function listEmployees(actor?: SessionActor) {
+  const supabase = requireServiceSupabaseClient();
+  let query = supabase
+    .from('employees')
+    .select(employeeSelectFields)
+    .order('created_at', { ascending: false });
+
+  if (actor?.role === 'employee') {
+    query = query.eq('parent_employee_id', actor.subjectId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as unknown as EmployeeRow[]).map(mapEmployee);
 }
 
 export async function createEmployee(
-  input: { fullName: string; whatsappNumber: string; defaultCodeValidityDays: number },
+  input: { fullName: string; whatsappNumber: string; defaultCodeValidityDays: number; parentEmployeeId?: string | null },
   actor: SessionActor,
 ) {
+  if (actor.role !== 'admin' && actor.role !== 'employee') {
+    throw new Error('FORBIDDEN');
+  }
+
   const supabase = requireServiceSupabaseClient();
   const identifiers = await generateUniqueEmployeeIdentifiers();
   const tempPassword = buildTempPassword();
   const normalizedPhone = normalizePhoneNumber(input.whatsappNumber);
+  const hierarchy = await resolveEmployeeHierarchy(
+    actor.role === 'employee' ? actor.subjectId : (input.parentEmployeeId ?? null),
+  );
 
   const payload = {
     employee_number: identifiers.employeeNumber,
@@ -616,12 +709,16 @@ export async function createEmployee(
     password_hash: hashPassword(tempPassword),
     default_code_validity_days: input.defaultCodeValidityDays,
     created_by: actor.subjectId,
+    parent_employee_id: hierarchy.parentEmployeeId,
+    parent_employee_name: hierarchy.parentEmployeeName,
+    root_employee_id: hierarchy.rootEmployeeId,
+    root_employee_name: hierarchy.rootEmployeeName,
   };
 
   const { data, error } = await supabase
     .from('employees')
     .insert([payload])
-    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_by, created_at')
+    .select(employeeSelectFields)
     .single<EmployeeRow>();
 
   if (error || !data) {
@@ -631,6 +728,8 @@ export async function createEmployee(
   await logAudit(actor, 'create_employee', 'employees', data.id, {
     employeeNumber: data.employee_number,
     staffCode: data.staff_code,
+    parentEmployeeId: data.parent_employee_id,
+    parentEmployeeName: data.parent_employee_name,
   });
 
   return {
@@ -649,7 +748,7 @@ export async function updateEmployeeStatus(
     .from('employees')
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq('id', employeeId)
-    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_by, created_at')
+    .select(employeeSelectFields)
     .single<EmployeeRow>();
 
   if (error || !data) {
@@ -663,11 +762,14 @@ export async function updateEmployeeStatus(
 export async function updateEmployee(
   employeeId: string,
   input: {
+    employeeNumber: string;
     fullName: string;
     whatsappNumber: string;
     defaultCodeValidityDays: number;
     staffCode: string;
     loginIdentifier: string;
+    newPassword?: string;
+    parentEmployeeId?: string | null;
     isActive: boolean;
   },
   actor: SessionActor,
@@ -678,21 +780,38 @@ export async function updateEmployee(
 
   const supabase = requireServiceSupabaseClient();
   const normalizedPhone = normalizePhoneNumber(input.whatsappNumber);
+  const hierarchy = await resolveEmployeeHierarchy(input.parentEmployeeId ?? null);
+
+  if (hierarchy.parentEmployeeId === employeeId) {
+    throw new Error('لا يمكن ربط الموظف بنفسه كموظف رئيسي');
+  }
+
+  const updatePayload: Record<string, unknown> = {
+    employee_number: sanitizeShortEmployeeCode(input.employeeNumber),
+    full_name: input.fullName.trim(),
+    whatsapp_encrypted: encryptText(normalizedPhone),
+    whatsapp_hash: hashValue(normalizedPhone),
+    whatsapp_last4: normalizedPhone.slice(-4),
+    staff_code: sanitizeShortEmployeeCode(input.staffCode),
+    login_identifier: sanitizeShortEmployeeCode(input.loginIdentifier),
+    default_code_validity_days: input.defaultCodeValidityDays,
+    is_active: input.isActive,
+    parent_employee_id: hierarchy.parentEmployeeId,
+    parent_employee_name: hierarchy.parentEmployeeName,
+    root_employee_id: hierarchy.rootEmployeeId,
+    root_employee_name: hierarchy.rootEmployeeName,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.newPassword?.trim()) {
+    updatePayload.password_hash = hashPassword(input.newPassword.trim());
+  }
+
   const { data, error } = await supabase
     .from('employees')
-    .update({
-      full_name: input.fullName.trim(),
-      whatsapp_encrypted: encryptText(normalizedPhone),
-      whatsapp_hash: hashValue(normalizedPhone),
-      whatsapp_last4: normalizedPhone.slice(-4),
-      staff_code: input.staffCode.trim().toUpperCase(),
-      login_identifier: input.loginIdentifier.trim(),
-      default_code_validity_days: input.defaultCodeValidityDays,
-      is_active: input.isActive,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', employeeId)
-    .select('id, employee_number, full_name, whatsapp_encrypted, whatsapp_last4, staff_code, login_identifier, default_code_validity_days, is_active, created_by, created_at')
+    .select(employeeSelectFields)
     .single<EmployeeRow>();
 
   if (error || !data) {
@@ -700,11 +819,15 @@ export async function updateEmployee(
   }
 
   await logAudit(actor, 'update_employee_code', 'employees', employeeId, {
+    employeeNumber: data.employee_number,
     fullName: data.full_name,
     staffCode: data.staff_code,
     loginIdentifier: data.login_identifier,
     isActive: data.is_active,
     whatsappLast4: data.whatsapp_last4,
+    parentEmployeeId: data.parent_employee_id,
+    rootEmployeeId: data.root_employee_id,
+    passwordUpdated: Boolean(input.newPassword?.trim()),
   });
 
   return mapEmployee(data);
@@ -716,28 +839,38 @@ export async function deleteEmployee(employeeId: string, actor: SessionActor) {
   }
 
   const supabase = requireServiceSupabaseClient();
-  const { count, error: countError } = await supabase
-    .from('student_records')
-    .select('id', { count: 'exact', head: true })
-    .eq('employee_id', employeeId);
-
-  if (countError) {
-    throw new Error(countError.message);
-  }
-
-  if ((count ?? 0) > 0) {
-    throw new Error('لا يمكن حذف الكود لارتباطه بطلبات أو سجلات طلاب حالية');
-  }
-
   const { data: existing, error: existingError } = await supabase
     .from('employees')
-    .select('staff_code, full_name')
+    .select('staff_code, full_name, parent_employee_id, parent_employee_name')
     .eq('id', employeeId)
-    .maybeSingle<{ staff_code: string; full_name: string }>();
+    .maybeSingle<{
+      staff_code: string;
+      full_name: string;
+      parent_employee_id: string | null;
+      parent_employee_name: string | null;
+    }>();
 
   if (existingError) {
     throw new Error(existingError.message);
   }
+
+  await supabase
+    .from('employees')
+    .update({
+      parent_employee_id: existing?.parent_employee_id ?? null,
+      parent_employee_name: existing?.parent_employee_name ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('parent_employee_id', employeeId);
+
+  await supabase
+    .from('employees')
+    .update({
+      root_employee_id: existing?.parent_employee_id ?? null,
+      root_employee_name: existing?.parent_employee_name ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('root_employee_id', employeeId);
 
   const { error } = await supabase.from('employees').delete().eq('id', employeeId);
 

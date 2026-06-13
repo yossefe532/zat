@@ -149,6 +149,7 @@ export default function AdminPage() {
     fullName: string;
     whatsappNumber: string;
     defaultCodeValidityDays: number;
+    parentEmployeeId?: string | null;
   }) {
     try {
       setError(null);
@@ -199,11 +200,14 @@ export default function AdminPage() {
   async function handleUpdateEmployee(
     employeeId: string,
     payload: {
+      employeeNumber: string;
       fullName: string;
       whatsappNumber: string;
       defaultCodeValidityDays: number;
       staffCode: string;
       loginIdentifier: string;
+      newPassword?: string;
+      parentEmployeeId?: string | null;
       isActive: boolean;
     },
   ) {

@@ -179,7 +179,7 @@ export default function ReferralsPage() {
                 value={loginState.registrationCode}
                 onChange={(event) => setLoginState((prev) => ({ ...prev, registrationCode: event.target.value.toUpperCase() }))}
                 className="field-shell w-full rounded-2xl px-4 py-3 text-center font-black"
-                placeholder={isAr ? 'مثال: M.955' : 'Example: M.955'}
+                placeholder={isAr ? 'مثال: M955' : 'Example: M955'}
                 dir="ltr"
               />
             </div>

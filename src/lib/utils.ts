@@ -13,7 +13,7 @@ export function getRegistrationCodePrefix(grantCode?: string): string {
 export function createRegistrationCodeCandidate(grantCode?: string): string {
   const prefix = getRegistrationCodePrefix(grantCode);
   const suffix = Math.floor(100 + Math.random() * 900).toString();
-  return `${prefix}.${suffix}`;
+  return `${prefix}${suffix}`.slice(0, 6);
 }
 
 export function normalizePhoneNumber(phone: string): string {

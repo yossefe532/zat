@@ -27,7 +27,7 @@ describe('registration booking helpers', () => {
         totalPrice: 675,
         firstInstallment: 200,
         secondInstallment: 475,
-        registrationCode: 'H.950',
+        registrationCode: 'H950',
         grantCodeUsed: 'H.E4U',
         whatsappSent: false,
         createdAt: '2026-06-10T12:00:00.000Z',
@@ -42,7 +42,7 @@ describe('registration booking helpers', () => {
     );
 
     expect(merged.id).toBe('reg-1');
-    expect(merged.registrationCode).toBe('H.950');
+    expect(merged.registrationCode).toBe('H950');
     expect(merged.fullName).toBe('أحمد علي');
     expect(merged.courses).toEqual([1, 3]);
     expect(merged.totalPrice).toBe(1350);

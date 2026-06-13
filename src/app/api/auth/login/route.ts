@@ -40,11 +40,12 @@ export async function POST(request: Request) {
     }
 
     const parsed = employeeLoginSchema.parse(body);
+    const normalizedLoginIdentifier = parsed.loginIdentifier.trim().toUpperCase();
     const supabase = requireServiceSupabaseClient();
     const { data, error } = await supabase
       .from('employees')
       .select('id, employee_number, full_name, staff_code, password_hash, is_active')
-      .eq('login_identifier', parsed.loginIdentifier)
+      .eq('login_identifier', normalizedLoginIdentifier)
       .maybeSingle<EmployeeLoginRow>();
 
     if (error) {

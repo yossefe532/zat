@@ -19,20 +19,20 @@ describe('whatsapp helpers', () => {
         { id: 2, name: 'ICDL', price: 675, level: 'أساسي' },
       ],
       totalAmount: 1350,
-      finalCode: 'ZAT-EMP01-AB12',
+      finalCode: 'SEA1B2',
       codeValidityDays: 7,
       codeExpiresAt: '2026-06-20T00:00:00.000Z',
       employeeId: 'emp-1',
       employeeName: 'سارة',
-      employeeNumber: 'EMP-001',
+      employeeNumber: 'E12001',
       whatsappSentAt: null,
       whatsappDeliveryId: null,
       createdAt: '2026-06-13T00:00:00.000Z',
     });
 
     expect(message).toContain('تم تسجيلك بنجاح');
-    expect(message).toContain('ZAT-EMP01-AB12');
-    expect(message).toContain('EMP-001');
+    expect(message).toContain('SEA1B2');
+    expect(message).toContain('E12001');
     expect(message).toContain('إنجليزي');
     expect(message).toContain('١٬٣٥٠');
   });

@@ -17,6 +17,10 @@ type EmployeeRow = {
   employee_number: string;
   full_name: string;
   staff_code: string;
+  parent_employee_id: string | null;
+  root_employee_id: string | null;
+  parent_employee_name: string | null;
+  root_employee_name: string | null;
   is_active: boolean;
 };
 
@@ -33,6 +37,10 @@ export type SessionActor = {
   employeeNumber?: string;
   fullName?: string;
   staffCode?: string;
+  parentEmployeeId?: string | null;
+  parentEmployeeName?: string | null;
+  rootEmployeeId?: string | null;
+  rootEmployeeName?: string | null;
   registrationId?: string;
 };
 
@@ -148,7 +156,7 @@ export async function getSessionActor(): Promise<SessionActor | null> {
 
   const { data: employee, error: employeeError } = await supabase
     .from('employees')
-    .select('id, employee_number, full_name, staff_code, is_active')
+    .select('id, employee_number, full_name, staff_code, parent_employee_id, root_employee_id, parent_employee_name, root_employee_name, is_active')
     .eq('id', session.subject_id)
     .maybeSingle<EmployeeRow>();
 
@@ -167,6 +175,10 @@ export async function getSessionActor(): Promise<SessionActor | null> {
     employeeNumber: employee.employee_number,
     fullName: employee.full_name,
     staffCode: employee.staff_code,
+    parentEmployeeId: employee.parent_employee_id,
+    parentEmployeeName: employee.parent_employee_name,
+    rootEmployeeId: employee.root_employee_id,
+    rootEmployeeName: employee.root_employee_name,
   };
 }
 

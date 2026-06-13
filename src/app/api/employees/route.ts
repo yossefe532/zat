@@ -6,8 +6,8 @@ import { createEmployeeSchema } from '@/lib/schemas';
 
 export async function GET() {
   try {
-    await requireSession(['admin']);
-    const employees = await listEmployees();
+    const actor = await requireSession(['admin', 'employee']);
+    const employees = await listEmployees(actor);
     return NextResponse.json({ success: true, data: employees });
   } catch (error) {
     return errorResponse(error);
@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const actor = await requireSession(['admin']);
+    const actor = await requireSession(['admin', 'employee']);
     const body = await request.json();
     const parsed = createEmployeeSchema.parse(body);
     const result = await createEmployee(parsed, actor);
