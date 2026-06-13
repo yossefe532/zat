@@ -5,6 +5,7 @@ import { buildRegistrationPhoneCandidates, normalizeRegistrantName } from '@/lib
 import { applyReferralBenefitsToTotal, getCourseCatalog, verifyReferralCodeForGrant } from '@/lib/portal';
 import { getSupabaseClient } from '@/lib/supabase';
 import { requireServiceSupabaseClient } from '@/lib/server-supabase';
+import { decryptText } from '@/lib/security';
 import { createRegistrationCodeCandidate, normalizePhoneNumber } from '@/lib/utils';
 import type { RegistrationInput, RegistrationRecord, RegistrationSubmissionResult } from '@/lib/types';
 
@@ -349,25 +350,11 @@ export async function updateExistingRegistration(
 export async function verifyGrantCodeAction(code: string) {
   const normalizedCode = code.trim().toUpperCase();
   const fallbackGrant = getFallbackGrantCode(normalizedCode);
-  const supabase = getSupabaseClient();
-
-  if (!supabase) {
-    if (fallbackGrant) {
-      return {
-        success: true,
-        data: mapGrantCodeRow(fallbackGrant),
-      };
-    }
-
-    return {
-      success: false,
-      errorMessage: 'Supabase is not configured',
-    };
-  }
+  const serviceSupabase = requireServiceSupabaseClient();
 
   try {
     // First check grant_codes table
-    const { data: grantData, error: grantError } = await supabase
+    const { data: grantData, error: grantError } = await serviceSupabase
       .from('grant_codes')
       .select('*')
       .eq('code', normalizedCode)
@@ -386,7 +373,7 @@ export async function verifyGrantCodeAction(code: string) {
     }
 
     // If not found in grant_codes, check employees table
-    const { data: employeeData, error: employeeError } = await supabase
+    const { data: employeeData, error: employeeError } = await serviceSupabase
       .from('employees')
       .select('staff_code, full_name, whatsapp_encrypted, is_active')
       .eq('staff_code', normalizedCode)
@@ -399,11 +386,9 @@ export async function verifyGrantCodeAction(code: string) {
 
     if (employeeData) {
       // If found in employees, decrypt the whatsapp number and return as grant code
-      const { decryptText } = await import('@/lib/security');
       const whatsappNumber = decryptText(employeeData.whatsapp_encrypted);
       
       // Also, create the missing grant_code entry for this employee
-      const serviceSupabase = (await import('@/lib/server-supabase')).requireServiceSupabaseClient();
       try {
         await serviceSupabase.from('grant_codes').insert([{
           code: employeeData.staff_code,
