@@ -228,7 +228,7 @@ const employeeSelectFields = [
 ].join(', ');
 
 function sanitizeShortEmployeeCode(value: string) {
-  return value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
+  return value.replace(/[^A-Za-z0-9.]/g, '').toUpperCase().slice(0, 10);
 }
 
 function buildShortEmployeeCode(prefix: string, seed: string) {
@@ -855,21 +855,23 @@ export async function updateEmployee(
   if (currentEmployee && currentEmployee.staff_code !== newStaffCode) {
     // If staff code changed, delete old grant_code and create new one
     await supabase.from('grant_codes').delete().eq('code', currentEmployee.staff_code);
-    await supabase.from('grant_codes').insert([{
+    // Use upsert to safely insert new grant code
+    await supabase.from('grant_codes').upsert([{
       code: newStaffCode,
       name_ar: data.full_name,
       name_en: data.full_name,
       whatsapp_number: normalizedPhone,
       is_active: data.is_active
-    }]);
+    }]).select().single();
   } else {
     // Just update the existing grant_code
-    await supabase.from('grant_codes').update({
+    await supabase.from('grant_codes').upsert([{
+      code: newStaffCode,
       name_ar: data.full_name,
       name_en: data.full_name,
       whatsapp_number: normalizedPhone,
       is_active: data.is_active
-    }).eq('code', newStaffCode);
+    }]).select().single();
   }
 
   await logAudit(actor, 'update_employee_code', 'employees', employeeId, {
